@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router";
-import { ChevronRight, ChevronDown, ChevronUp, SlidersHorizontal, LayoutGrid, List, Search } from "lucide-react";
+import { ChevronRight, ChevronDown, ChevronUp, SlidersHorizontal, LayoutGrid, List } from "lucide-react";
 import { productService } from "../../services";
+import type { Category, Product } from "../../services/types";
 import { ProductCard } from "../../components/Product/ProductCard";
 
 const BRANDS = ["Apple", "Samsung", "Sony", "Xiaomi", "Oppo", "Lenovo"];
@@ -13,18 +14,14 @@ const SORT_OPTIONS = [
   { value: "sold", label: "Bán chạy nhất" },
 ];
 
-const CATEGORY_TREE = [
-  { name: "Điện tử", children: ["Điện thoại", "Laptop", "Máy tính bảng", "Màn hình"] },
-  { name: "Thời trang", children: ["Áo nam", "Quần nữ", "Phụ kiện"] },
-  { name: "Nhà cửa", children: ["Nội thất", "Thiết bị", "Trang trí"] },
-  { name: "Âm thanh", children: ["Tai nghe", "Loa", "Micro"] },
-];
-
 const transformProduct = (apiProduct: any) => ({
   id: apiProduct.product_id,
   name: apiProduct.name,
   brand: apiProduct.brands?.name || "",
+  brandId: apiProduct.brands?.brand_id || "",
   category: apiProduct.categories?.name || "",
+  categoryId: apiProduct.categories?.category_id || "",
+  categorySlug: apiProduct.categories?.slug || "",
   sku: apiProduct.sku,
   price: apiProduct.price,
   comparePrice: apiProduct.compare_price,
@@ -39,6 +36,8 @@ const transformProduct = (apiProduct: any) => ({
   badge: apiProduct.new_arrival ? "NEW" : apiProduct.featured ? "HOT" : null,
   discount: apiProduct.compare_price ? Math.round((1 - apiProduct.price / apiProduct.compare_price) * 100) : 0,
   featured: apiProduct.featured,
+  bestSeller: apiProduct.best_seller,
+  newArrival: apiProduct.new_arrival,
   status: apiProduct.status,
   description: apiProduct.description || apiProduct.short_description || "",
 });
@@ -52,26 +51,73 @@ export function ScreensProductList() {
   const navigate = useNavigate();
   const location = useLocation();
   const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sort, setSort] = useState("newest");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState([0, 50000000]);
   const [selectedRatings, setSelectedRatings] = useState<number[]>([]);
-  const [expandedCat, setExpandedCat] = useState<string | null>("Điện tử");
+  const [expandedCat, setExpandedCat] = useState<string | null>("api-categories");
   const [activeStatusFilters, setActiveStatusFilters] = useState<string[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
 
   useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        let nextCategories: Category[] = [];
+
+        try {
+          nextCategories = await productService.getCategories();
+        } catch {
+          const data = await productService.getProducts({ page: 1, limit: 100 });
+          const categoryMap = new Map<string, Category>();
+
+          data.products.forEach((product: Product) => {
+            if (product.categories?.category_id) {
+              categoryMap.set(product.categories.category_id, product.categories);
+            }
+          });
+
+          nextCategories = Array.from(categoryMap.values());
+        }
+
+        setCategories(nextCategories);
+
+        const queryCategory = new URLSearchParams(location.search).get("cat");
+        if (queryCategory) {
+          const matchedCategory = nextCategories.find((category) =>
+            [category.category_id, category.slug, category.name].some(
+              (value) => value?.toLowerCase() === queryCategory.toLowerCase()
+            )
+          );
+
+          if (matchedCategory) {
+            setSelectedCategoryId(matchedCategory.category_id);
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchCategories();
+  }, [location.search]);
+
+  useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
+        setError(null);
         const data = await productService.getProducts({ 
           page: pagination.page, 
           limit: pagination.limit,
-          featured: activeStatusFilters.includes("Hàng mới") ? undefined : activeStatusFilters.includes("Bán chạy") ? undefined : undefined
+          category_id: selectedCategoryId || undefined,
+          best_seller: activeStatusFilters.includes("Bán chạy") ? true : undefined,
+          new_arrival: activeStatusFilters.includes("Hàng mới") ? true : undefined,
         });
         setProducts(data.products.map(transformProduct));
         setPagination(data.pagination);
@@ -83,7 +129,7 @@ export function ScreensProductList() {
       }
     };
     fetchProducts();
-  }, [pagination.page, pagination.limit]);
+  }, [pagination.page, pagination.limit, selectedCategoryId, activeStatusFilters]);
 
   const toggleBrand = (brand: string) =>
     setSelectedBrands((prev) => prev.includes(brand) ? prev.filter((b) => b !== brand) : [...prev, brand]);
@@ -94,7 +140,34 @@ export function ScreensProductList() {
   const toggleStatus = (s: string) =>
     setActiveStatusFilters((prev) => prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]);
 
-  const sortedProducts = [...products].sort((a, b) => {
+  const selectedCategory = categories.find((category) => category.category_id === selectedCategoryId);
+  const hasLocalFilters =
+    selectedBrands.length > 0 ||
+    selectedRatings.length > 0 ||
+    priceRange[0] > 0 ||
+    priceRange[1] < 50000000 ||
+    activeStatusFilters.includes("Đang giảm giá") ||
+    activeStatusFilters.includes("Còn hàng");
+
+  const displayedProducts = useMemo(() => {
+    return products.filter((product) => {
+      const matchBrand = selectedBrands.length === 0 || selectedBrands.includes(product.brand);
+      const matchPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
+      const matchRating = selectedRatings.length === 0 || selectedRatings.some((rating) => product.rating >= rating);
+      const matchSale = !activeStatusFilters.includes("Đang giảm giá") || product.discount > 0;
+      const matchStock = !activeStatusFilters.includes("Còn hàng") || product.stock > 0;
+
+      return matchBrand && matchPrice && matchRating && matchSale && matchStock;
+    });
+  }, [products, selectedBrands, priceRange, selectedRatings, activeStatusFilters]);
+
+  const handleSelectCategory = (categoryId: string) => {
+    setSelectedCategoryId(categoryId);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+    setFilterOpen(false);
+  };
+
+  const sortedProducts = [...displayedProducts].sort((a, b) => {
     if (sort === "price_asc") return a.price - b.price;
     if (sort === "price_desc") return b.price - a.price;
     if (sort === "rating") return b.rating - a.rating;
@@ -108,29 +181,45 @@ export function ScreensProductList() {
       <div>
         <h4 className="font-semibold text-[#212121] mb-3 text-sm">Danh mục</h4>
         <div className="space-y-1">
-          {CATEGORY_TREE.map((cat) => (
-            <div key={cat.name}>
-              <button
-                className="w-full flex items-center justify-between py-1.5 text-sm text-[#212121] hover:text-[#1565C0]"
-                onClick={() => setExpandedCat(expandedCat === cat.name ? null : cat.name)}
-              >
-                <span>{cat.name}</span>
-                {expandedCat === cat.name ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-              </button>
-              {expandedCat === cat.name && (
-                <div className="pl-3 space-y-1 mb-1">
-                  {cat.children.map((child) => (
-                    <button
-                      key={child}
-                      className="block w-full text-left py-1 text-xs text-[#757575] hover:text-[#1565C0] hover:font-medium"
-                    >
-                      {child}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
+          <button
+            onClick={() => handleSelectCategory("")}
+            className={`block w-full text-left py-1.5 text-sm rounded-md px-2 ${
+              selectedCategoryId === ""
+                ? "text-[#1565C0] font-semibold bg-blue-50"
+                : "text-[#212121] hover:text-[#1565C0]"
+            }`}
+          >
+            Tất cả sản phẩm
+          </button>
+          <div>
+            <button
+              className="w-full flex items-center justify-between py-1.5 text-sm text-[#212121] hover:text-[#1565C0]"
+              onClick={() => setExpandedCat(expandedCat === "api-categories" ? null : "api-categories")}
+            >
+              <span>Danh mục sản phẩm</span>
+              {expandedCat === "api-categories" ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+            {expandedCat === "api-categories" && (
+              <div className="pl-3 space-y-1 mb-1">
+                {categories.map((category) => (
+                  <button
+                    key={category.category_id}
+                    onClick={() => handleSelectCategory(category.category_id)}
+                    className={`block w-full text-left py-1 text-xs rounded px-2 ${
+                      selectedCategoryId === category.category_id
+                        ? "text-[#1565C0] font-semibold bg-blue-50"
+                        : "text-[#757575] hover:text-[#1565C0] hover:font-medium"
+                    }`}
+                  >
+                    {category.name}
+                  </button>
+                ))}
+                {categories.length === 0 && (
+                  <p className="py-1 text-xs text-[#757575]">Chưa có danh mục</p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -242,7 +331,13 @@ export function ScreensProductList() {
           Áp dụng
         </button>
         <button
-          onClick={() => { setSelectedBrands([]); setSelectedRatings([]); setActiveStatusFilters([]); }}
+          onClick={() => {
+            setSelectedBrands([]);
+            setSelectedRatings([]);
+            setActiveStatusFilters([]);
+            setPriceRange([0, 50000000]);
+            handleSelectCategory("");
+          }}
           className="text-sm text-[#757575] hover:text-[#E53935] px-3"
         >
           Đặt lại
@@ -290,9 +385,13 @@ export function ScreensProductList() {
       <div className="flex items-center gap-1 text-sm text-[#757575] mb-5">
         <button onClick={() => navigate("/")} className="hover:text-[#E53935]">Trang chủ</button>
         <ChevronRight size={13} />
-        <button onClick={() => navigate("/products")} className="hover:text-[#E53935]">Điện tử</button>
-        <ChevronRight size={13} />
-        <span className="text-[#212121] font-medium">Điện thoại</span>
+        <button onClick={() => handleSelectCategory("")} className="hover:text-[#E53935]">Sản phẩm</button>
+        {selectedCategory && (
+          <>
+            <ChevronRight size={13} />
+            <span className="text-[#212121] font-medium">{selectedCategory.name}</span>
+          </>
+        )}
       </div>
 
       <div className="flex gap-6">
@@ -306,7 +405,7 @@ export function ScreensProductList() {
           {/* Top bar */}
           <div className="bg-white rounded-xl border border-[#E0E0E0] p-3 mb-4 flex items-center gap-3 flex-wrap">
             <span className="text-sm text-[#757575]">
-              <span className="font-semibold text-[#212121]">{pagination.total}</span> sản phẩm
+              <span className="font-semibold text-[#212121]">{hasLocalFilters ? sortedProducts.length : pagination.total}</span> sản phẩm
             </span>
             <div className="flex-1" />
 
@@ -344,12 +443,12 @@ export function ScreensProductList() {
           </div>
 
           {/* Product Grid */}
-          {products.length > 0 ? (
+          {sortedProducts.length > 0 ? (
             <div className={viewMode === "grid"
               ? "grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4"
               : "flex flex-col gap-3"
             }>
-              {products.map((product) => (
+              {sortedProducts.map((product) => (
                 viewMode === "grid" ? (
                   <ProductCard
                     key={product.id}
@@ -389,7 +488,13 @@ export function ScreensProductList() {
               <h3 className="text-lg font-semibold text-[#212121] mb-2">Không tìm thấy sản phẩm</h3>
               <p className="text-[#757575] mb-4">Thử điều chỉnh bộ lọc để tìm kiếm tốt hơn</p>
               <button
-                onClick={() => { setSelectedBrands([]); setSelectedRatings([]); }}
+                onClick={() => {
+                  setSelectedBrands([]);
+                  setSelectedRatings([]);
+                  setActiveStatusFilters([]);
+                  setPriceRange([0, 50000000]);
+                  handleSelectCategory("");
+                }}
                 className="bg-[#E53935] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#C62828]"
               >
                 Xóa bộ lọc

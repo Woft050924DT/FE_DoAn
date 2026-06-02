@@ -15,6 +15,20 @@ interface CartItem {
   selected: boolean;
 }
 
+const normalizeCartProduct = (item: any) => {
+  const product = item.products || item.product || item;
+  const primaryImage = product.product_images?.find((image: any) => image.is_primary)?.image_url;
+
+  return {
+    ...product,
+    image: product.image || primaryImage || product.product_images?.[0]?.image_url || "",
+    name: product.name || item.name || "",
+    price: item.price || product.price || 0,
+    compare_price: product.compare_price,
+    product_id: product.product_id || item.product_id,
+  };
+};
+
 export function ScreensCart() {
   const navigate = useNavigate();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -30,10 +44,10 @@ export function ScreensCart() {
         const cart = await cartService.getCart();
         const items = (cart.cart_items || []).map((item: any) => ({
           id: item.cart_item_id,
-          product: item,
+          product: normalizeCartProduct(item),
           quantity: item.quantity,
-          color: item.variant || "",
-          size: item.variant || "",
+          color: item.product_variants?.option1_value || item.product_variants?.name || "",
+          size: item.product_variants?.option2_value || "",
           selected: true,
         }));
         setCartItems(items);
@@ -54,12 +68,24 @@ export function ScreensCart() {
     setCartItems((items) => items.map((item) => ({ ...item, selected: !allSelected })));
   };
 
-  const updateQuantity = (id: string, qty: number) => {
+  const updateQuantity = async (id: string, qty: number) => {
     if (qty < 1) return;
     setCartItems((items) => items.map((item) => item.id === id ? { ...item, quantity: qty } : item));
+    try {
+      await cartService.updateCartItem(id, qty);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const removeItem = (id: string) => setCartItems((items) => items.filter((i) => i.id !== id));
+  const removeItem = async (id: string) => {
+    setCartItems((items) => items.filter((i) => i.id !== id));
+    try {
+      await cartService.removeCartItem(id);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const applyCoupon = () => {
     if (couponCode.toUpperCase() === "SALE10") {

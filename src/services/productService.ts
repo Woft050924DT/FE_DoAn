@@ -1,5 +1,5 @@
 import apiClient from './apiClient';
-import { Product, ProductDetail, ProductListParams, ProductListResponse } from './types';
+import { Category, Product, ProductDetail, ProductListParams, ProductListResponse } from './types';
 
 export const productService = {
   /**
@@ -10,6 +10,15 @@ export const productService = {
   async getProducts(params?: ProductListParams): Promise<ProductListResponse> {
     const response = await apiClient.get<ProductListResponse>('/api/products', { params });
     return response.data;
+  },
+
+  /**
+   * Get category list
+   * @returns Promise with categories
+   */
+  async getCategories(): Promise<Category[]> {
+    const response = await apiClient.get<Category[] | { categories: Category[] }>('/api/categories');
+    return Array.isArray(response.data) ? response.data : response.data.categories;
   },
 
   /**

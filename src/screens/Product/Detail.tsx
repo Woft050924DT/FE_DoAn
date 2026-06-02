@@ -4,7 +4,7 @@ import {
   Star, ChevronRight, ShoppingCart, Zap, Truck, Share2,
   Heart, Shield, RotateCcw, ThumbsUp, ChevronLeft, ChevronRight as ChevronRightIcon
 } from "lucide-react";
-import { productService } from "../../services";
+import { cartService, productService } from "../../services";
 import { ProductCard } from "../../components/Product/ProductCard";
 
 const TABS = ["Mô tả", "Thông số", "Đánh giá (128)", "Hỏi đáp"];
@@ -57,6 +57,8 @@ export function ScreensProductDetail() {
   const [activeTab, setActiveTab] = useState(0);
   const [wishlisted, setWishlisted] = useState(false);
   const [relatedProducts, setRelatedProducts] = useState<any[]>([]);
+  const [addingToCart, setAddingToCart] = useState(false);
+  const [cartMessage, setCartMessage] = useState("");
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -124,6 +126,32 @@ export function ScreensProductDetail() {
   }
 
   const images = product.images || [product.image];
+
+  const handleAddToCart = async () => {
+    if (!product || addingToCart) return false;
+
+    try {
+      setAddingToCart(true);
+      setCartMessage("");
+      await cartService.addToCart({
+        product_id: product.id,
+        quantity,
+      });
+      setCartMessage("Đã thêm sản phẩm vào giỏ hàng");
+      return true;
+    } catch (err) {
+      console.error("Failed to add to cart:", err);
+      setCartMessage("Không thể thêm sản phẩm vào giỏ hàng");
+      return false;
+    } finally {
+      setAddingToCart(false);
+    }
+  };
+
+  const handleBuyNow = async () => {
+    const added = await handleAddToCart();
+    if (added) navigate("/checkout");
+  };
 
   const ratingBreakdown = [
     { stars: 5, count: 89 },
@@ -296,13 +324,18 @@ export function ScreensProductDetail() {
 
           {/* CTA Buttons */}
           <div className="flex gap-3 mb-4">
-            <button className="flex-1 flex items-center justify-center gap-2 border-2 border-[#1565C0] text-[#1565C0] py-3 rounded-xl font-semibold hover:bg-[#1565C0]/5 transition-colors">
+            <button
+              onClick={handleAddToCart}
+              disabled={addingToCart}
+              className="flex-1 flex items-center justify-center gap-2 border-2 border-[#1565C0] text-[#1565C0] py-3 rounded-xl font-semibold hover:bg-[#1565C0]/5 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            >
               <ShoppingCart size={18} />
-              Thêm vào giỏ
+              {addingToCart ? "Đang thêm..." : "Thêm vào giỏ"}
             </button>
             <button
-              onClick={() => navigate("/checkout")}
-              className="flex-1 flex items-center justify-center gap-2 bg-[#E53935] text-white py-3 rounded-xl font-semibold hover:bg-[#C62828] transition-colors"
+              onClick={handleBuyNow}
+              disabled={addingToCart}
+              className="flex-1 flex items-center justify-center gap-2 bg-[#E53935] text-white py-3 rounded-xl font-semibold hover:bg-[#C62828] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               <Zap size={18} />
               Mua ngay
@@ -316,6 +349,11 @@ export function ScreensProductDetail() {
               <Heart size={18} className={wishlisted ? "fill-[#E53935]" : ""} />
             </button>
           </div>
+          {cartMessage && (
+            <p className={`text-sm mb-4 ${cartMessage.startsWith("Đã") ? "text-[#2E7D32]" : "text-[#E53935]"}`}>
+              {cartMessage}
+            </p>
+          )}
 
           {/* Shipping note */}
           <div className="flex items-center gap-2 text-sm text-[#757575] mb-3">

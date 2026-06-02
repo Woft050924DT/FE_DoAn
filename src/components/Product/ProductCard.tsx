@@ -29,18 +29,21 @@ export function ProductCard({ product, onClick }: ProductCardProps) {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [addingToCart, setAddingToCart] = useState(false);
+  const [cartMessage, setCartMessage] = useState("");
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setAddingToCart(true);
+    setCartMessage("");
     try {
       await cartService.addToCart({
         product_id: product.id,
         quantity: 1,
       });
-      // Could add toast notification here
+      setCartMessage("Đã thêm vào giỏ");
     } catch (error) {
       console.error("Failed to add to cart:", error);
+      setCartMessage("Không thêm được");
     } finally {
       setAddingToCart(false);
     }
@@ -127,6 +130,11 @@ export function ProductCard({ product, onClick }: ProductCardProps) {
           <ShoppingCart size={13} />
           {addingToCart ? "Đang thêm..." : "Thêm vào giỏ"}
         </button>
+        {cartMessage && (
+          <p className={`mt-1 text-center text-[11px] ${cartMessage.startsWith("Đã") ? "text-[#2E7D32]" : "text-[#E53935]"}`}>
+            {cartMessage}
+          </p>
+        )}
       </div>
     </div>
   );
