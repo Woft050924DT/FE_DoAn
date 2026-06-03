@@ -4,8 +4,11 @@ import {
   Star, ChevronRight, ShoppingCart, Zap, Truck, Share2,
   Heart, Shield, RotateCcw, ThumbsUp, ChevronLeft, ChevronRight as ChevronRightIcon
 } from "lucide-react";
-import { productService } from "../../services";
+import { productService, cartService } from "../../services";
 import { ProductCard } from "../../components/Product/ProductCard";
+import { mapProductCard, uniqueImageUrls } from "../../utils/apiMappers";
+import { useApp } from "../../contexts/AppContext";
+import { authService } from "../../services/authService";
 
 const TABS = ["Mô tả", "Thông số", "Đánh giá (128)", "Hỏi đáp"];
 
@@ -15,8 +18,6 @@ const COLORS = [
   { name: "Titan Trắng", hex: "#F5F5F0" },
   { name: "Titan Xanh", hex: "#4A6C8C" },
 ];
-
-const SIZES = ["64GB", "128GB", "256GB", "512GB", "1TB"];
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
@@ -47,12 +48,14 @@ const transformProduct = (apiProduct: any) => ({
 export function ScreensProductDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { refreshCart } = useApp();
   const [product, setProduct] = useState<any>(null);
+  const [variants, setVariants] = useState<any[]>([]);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedColor, setSelectedColor] = useState(0);
-  const [selectedSize, setSelectedSize] = useState(2);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState(0);
   const [wishlisted, setWishlisted] = useState(false);
@@ -63,7 +66,11 @@ export function ScreensProductDetail() {
       try {
         setLoading(true);
         const data = await productService.getProductById(id || "");
-        setProduct(transformProduct(data));
+        const mapped = mapProductCard(data);
+        setProduct(mapped);
+        setVariants(data.product_variants || []);
+        setSelectedVariantId(data.product_variants?.[0]?.variant_id || null);
+        setSelectedImage(0);
       } catch (err) {
         setError("Không thể tải thông tin sản phẩm");
         console.error(err);
@@ -80,7 +87,7 @@ export function ScreensProductDetail() {
         const data = await productService.getProducts({ limit: 6 });
         setRelatedProducts(data.products
           .filter((p: any) => p.product_id !== product?.id)
-          .map(transformProduct)
+          .map(mapProductCard)
           .slice(0, 6)
         );
       } catch (err) {
@@ -103,6 +110,28 @@ export function ScreensProductDetail() {
     );
   }
 
+  const handleAddToCart = async () => {
+    if (!authService.isAuthenticated()) {
+      navigate("/login");
+      return;
+    }
+    if (variants.length > 0 && !selectedVariantId) {
+      alert("Vui lòng chọn biến thể sản phẩm");
+      return;
+    }
+    try {
+      await cartService.addToCart({
+        product_id: product.id,
+        variant_id: selectedVariantId || undefined,
+        quantity,
+      });
+      await refreshCart();
+      alert("Đã thêm vào giỏ hàng");
+    } catch (err: any) {
+      alert(err.response?.data?.error || "Không thể thêm vào giỏ");
+    }
+  };
+
   if (error || !product) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-6">
@@ -123,7 +152,9 @@ export function ScreensProductDetail() {
     );
   }
 
-  const images = product.images || [product.image];
+  const galleryImages = product
+    ? uniqueImageUrls(product.images?.length ? product.images : [], product.image)
+    : [];
 
   const ratingBreakdown = [
     { stars: 5, count: 89 },
@@ -140,7 +171,7 @@ export function ScreensProductDetail() {
       <div className="flex items-center gap-1 text-sm text-[#757575] mb-6">
         <button onClick={() => navigate("/")} className="hover:text-[#E53935]">Trang chủ</button>
         <ChevronRight size={13} />
-        <button onClick={() => navigate("/products")} className="hover:text-[#E53935]">Điện tử</button>
+        <button onClick={() => navigate("/products")} className="hover:text-[#E53935]">Đồng hồ</button>
         <ChevronRight size={13} />
         <span className="text-[#212121] font-medium line-clamp-1">{product.name}</span>
       </div>
@@ -151,7 +182,7 @@ export function ScreensProductDetail() {
         <div>
           <div className="relative aspect-square bg-gray-50 rounded-2xl overflow-hidden mb-3 border border-[#E0E0E0]">
             <img
-              src={images[selectedImage] || product.image}
+              src={galleryImages[selectedImage] || product.image}
               alt={product.name}
               className="w-full h-full object-cover cursor-zoom-in"
             />
@@ -160,16 +191,18 @@ export function ScreensProductDetail() {
                 -{product.discount}%
               </div>
             )}
-            {images.length > 1 && (
+            {galleryImages.length > 1 && (
               <>
                 <button
-                  onClick={() => setSelectedImage((s) => (s - 1 + images.length) % images.length)}
+                  onClick={() =>
+                    setSelectedImage((s) => (s - 1 + galleryImages.length) % galleryImages.length)
+                  }
                   className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center shadow hover:bg-white"
                 >
                   <ChevronLeft size={16} />
                 </button>
                 <button
-                  onClick={() => setSelectedImage((s) => (s + 1) % images.length)}
+                  onClick={() => setSelectedImage((s) => (s + 1) % galleryImages.length)}
                   className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center shadow hover:bg-white"
                 >
                   <ChevronRightIcon size={16} />
@@ -177,19 +210,22 @@ export function ScreensProductDetail() {
               </>
             )}
           </div>
-          <div className="flex gap-2">
-            {[...images, product.image, product.image].slice(0, 5).map((img, i) => (
-              <button
-                key={i}
-                onClick={() => setSelectedImage(i)}
-                className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition-all shrink-0 ${
-                  selectedImage === i ? "border-[#1565C0] ring-2 ring-[#1565C0]/20" : "border-[#E0E0E0]"
-                }`}
-              >
-                <img src={img} alt="" className="w-full h-full object-cover" />
-              </button>
-            ))}
-          </div>
+          {galleryImages.length > 1 && (
+            <div className="flex gap-2 flex-wrap">
+              {galleryImages.map((img, i) => (
+                <button
+                  key={`${img}-${i}`}
+                  type="button"
+                  onClick={() => setSelectedImage(i)}
+                  className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition-all shrink-0 ${
+                    selectedImage === i ? "border-[#1565C0] ring-2 ring-[#1565C0]/20" : "border-[#E0E0E0]"
+                  }`}
+                >
+                  <img src={img} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Product Info */}
@@ -245,28 +281,6 @@ export function ScreensProductDetail() {
             </div>
           </div>
 
-          {/* Sizes */}
-          <div className="mb-4">
-            <p className="text-sm font-medium text-[#212121] mb-2">
-              Dung lượng: <span className="font-normal text-[#757575]">{SIZES[selectedSize]}</span>
-            </p>
-            <div className="flex gap-2 flex-wrap">
-              {SIZES.map((size, i) => (
-                <button
-                  key={size}
-                  onClick={() => setSelectedSize(i)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
-                    selectedSize === i
-                      ? "bg-[#1E2A3A] text-white border-[#1E2A3A]"
-                      : "border-[#E0E0E0] text-[#212121] hover:border-[#1565C0]"
-                  }`}
-                >
-                  {size}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Low stock warning */}
           {product.stock !== undefined && product.stock <= 10 && product.stock > 0 && (
             <div className="flex items-center gap-2 text-[#E65100] text-sm bg-orange-50 px-3 py-2 rounded-lg mb-4">
@@ -286,8 +300,13 @@ export function ScreensProductDetail() {
               </button>
               <span className="w-10 text-center text-sm font-medium">{quantity}</span>
               <button
-                onClick={() => setQuantity((q) => q + 1)}
-                className="w-9 h-9 flex items-center justify-center hover:bg-gray-100 text-[#212121] font-bold"
+                onClick={() =>
+                  setQuantity((q) =>
+                    product.stock > 0 ? Math.min(product.stock, q + 1) : q + 1
+                  )
+                }
+                disabled={product.stock > 0 && quantity >= product.stock}
+                className="w-9 h-9 flex items-center justify-center hover:bg-gray-100 text-[#212121] font-bold disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 +
               </button>
@@ -296,12 +315,18 @@ export function ScreensProductDetail() {
 
           {/* CTA Buttons */}
           <div className="flex gap-3 mb-4">
-            <button className="flex-1 flex items-center justify-center gap-2 border-2 border-[#1565C0] text-[#1565C0] py-3 rounded-xl font-semibold hover:bg-[#1565C0]/5 transition-colors">
+            <button
+              onClick={handleAddToCart}
+              className="flex-1 flex items-center justify-center gap-2 border-2 border-[#1565C0] text-[#1565C0] py-3 rounded-xl font-semibold hover:bg-[#1565C0]/5 transition-colors"
+            >
               <ShoppingCart size={18} />
               Thêm vào giỏ
             </button>
             <button
-              onClick={() => navigate("/checkout")}
+              onClick={async () => {
+                await handleAddToCart();
+                navigate("/checkout");
+              }}
               className="flex-1 flex items-center justify-center gap-2 bg-[#E53935] text-white py-3 rounded-xl font-semibold hover:bg-[#C62828] transition-colors"
             >
               <Zap size={18} />
@@ -364,12 +389,12 @@ export function ScreensProductDetail() {
           {activeTab === 0 && (
             <div className="text-sm text-[#757575] leading-relaxed">
               <p className="mb-3">{product.description}</p>
-              <p>Sản phẩm được nhập khẩu chính hãng, đầy đủ phụ kiện, tem nhãn còn nguyên vẹn. Bảo hành tại các trung tâm bảo hành ủy quyền trên toàn quốc.</p>
+              <p>Đồng hồ chính hãng, đầy đủ hộp, sách hướng dẫn và tem bảo hành. Bảo hành tại các trung tâm ủy quyền của thương hiệu trên toàn quốc.</p>
             </div>
           )}
           {activeTab === 1 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {[["Thương hiệu", product.brand], ["SKU", product.sku], ["Bảo hành", "12 tháng"], ["Xuất xứ", "Chính hãng"], ["Trọng lượng", "228g"], ["Kết nối", "5G, WiFi 6E, Bluetooth 5.3"]].map(([key, val]) => (
+              {[["Thương hiệu", product.brand], ["SKU", product.sku], ["Bảo hành", "24 tháng"], ["Xuất xứ", "Chính hãng"], ["Mặt số", "42mm"], ["Chống nước", "5 ATM (50m)"]].map(([key, val]) => (
                 <div key={key} className="flex gap-3 text-sm">
                   <span className="text-[#757575] w-28 shrink-0">{key}</span>
                   <span className="text-[#212121] font-medium">{val}</span>

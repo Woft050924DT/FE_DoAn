@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router";
 import {
-  LayoutDashboard, ShoppingBag, Package, Tag, Truck, Star, Percent,
-  FileText, Image, Menu as MenuIcon, FolderOpen, MessageSquare, Bot,
-  Database, Reply, Users, UserCheck, Settings, CreditCard, Bell,
-  ChevronDown, Search, Zap, X, ChevronRight, Activity
+  LayoutDashboard, ShoppingBag, Package, Warehouse, Tag, Truck, Star, Percent,
+  FileText, Image, Menu as MenuIcon, FolderOpen,
+  Users, UserCheck, Settings, CreditCard, Bell,
+  ChevronDown, Search, Watch, X, ChevronRight, Activity
 } from "lucide-react";
 
 const SIDEBAR_GROUPS = [
@@ -17,27 +17,9 @@ const SIDEBAR_GROUPS = [
     items: [
       { icon: ShoppingBag, label: "Đơn hàng", path: "/admin/orders" },
       { icon: Package, label: "Sản phẩm", path: "/admin/products" },
+      { icon: Warehouse, label: "Kho hàng", path: "/admin/inventory" },
       { icon: Tag, label: "Danh mục", path: "/admin/categories" },
       { icon: Activity, label: "Thương hiệu", path: "/admin/brands" },
-      { icon: Star, label: "Đánh giá", path: "/admin/reviews" },
-      { icon: Percent, label: "Mã giảm giá", path: "/admin/coupons" },
-    ],
-  },
-  {
-    label: "NỘI DUNG",
-    items: [
-      { icon: FileText, label: "Bài viết", path: "/admin/posts" },
-      { icon: Image, label: "Banner", path: "/admin/banners" },
-      { icon: FolderOpen, label: "Thư viện", path: "/admin/media" },
-    ],
-  },
-  {
-    label: "CHAT",
-    items: [
-      { icon: MessageSquare, label: "Hội thoại", path: "/admin/chat" },
-      { icon: Bot, label: "AI Chat Log", path: "/admin/ai-logs" },
-      { icon: Database, label: "Dữ liệu huấn luyện", path: "/admin/ai-training" },
-      { icon: Reply, label: "Trả lời nhanh", path: "/admin/quick-replies" },
     ],
   },
   {
@@ -45,14 +27,6 @@ const SIDEBAR_GROUPS = [
     items: [
       { icon: Users, label: "Khách hàng", path: "/admin/customers" },
       { icon: UserCheck, label: "Nhân viên", path: "/admin/staff" },
-    ],
-  },
-  {
-    label: "CÀI ĐẶT",
-    items: [
-      { icon: Settings, label: "Chung", path: "/admin/settings" },
-      { icon: CreditCard, label: "Thanh toán", path: "/admin/payment" },
-      { icon: Truck, label: "Vận chuyển", path: "/admin/shipping" },
     ],
   },
 ];
@@ -77,11 +51,11 @@ export function LayoutAdmin() {
         <div className="h-16 flex items-center px-4 border-b border-white/10">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-[#2563EB] rounded-lg flex items-center justify-center shrink-0">
-              <Zap size={16} className="text-white" />
+              <Watch size={16} className="text-white" />
             </div>
             {sidebarOpen && (
               <div>
-                <p className="text-white font-bold text-sm">VietShop</p>
+                <p className="text-white font-bold text-sm">VietWatch</p>
                 <p className="text-gray-400 text-xs">Admin Panel</p>
               </div>
             )}

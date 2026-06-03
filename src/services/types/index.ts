@@ -54,16 +54,47 @@ export interface ProductDetail extends Product {
 
 export interface Category {
   category_id: string;
+  parent_id?: string | null;
   name: string;
   slug: string;
+  description?: string | null;
+  image_url?: string | null;
+  icon?: string | null;
+  display_order?: number;
+  is_active?: boolean;
+  _count?: { products: number };
 }
 
 export interface Brand {
   brand_id: string;
   name: string;
   slug: string;
-  logo_url?: string;
+  logo_url?: string | null;
+  description?: string | null;
+  website?: string | null;
+  is_active?: boolean;
+  _count?: { products: number };
 }
+
+export type CreateBrandRequest = {
+  name: string;
+  slug?: string;
+  logo_url?: string;
+  description?: string;
+  website?: string;
+  is_active?: boolean;
+};
+
+export type CreateCategoryRequest = {
+  name: string;
+  slug?: string;
+  description?: string;
+  image_url?: string;
+  icon?: string;
+  display_order?: number;
+  parent_id?: string | null;
+  is_active?: boolean;
+};
 
 export interface ProductImage {
   image_id: string;
@@ -119,8 +150,41 @@ export interface ProductListParams {
   featured?: boolean;
   best_seller?: boolean;
   new_arrival?: boolean;
+  search?: string;
   page?: number;
   limit?: number;
+  admin?: boolean;
+  status?: string;
+}
+
+export interface CreateProductRequest {
+  name: string;
+  sku: string;
+  price: number;
+  compare_price?: number;
+  cost_price?: number;
+  short_description?: string;
+  description?: string;
+  category_id?: string;
+  brand_id?: string;
+  status?: 'draft' | 'published' | 'archived';
+  featured?: boolean;
+  best_seller?: boolean;
+  new_arrival?: boolean;
+  image_url?: string;
+  image_urls?: string[];
+  stock_quantity?: number;
+}
+
+export type UpdateProductRequest = Partial<CreateProductRequest>;
+
+export interface UpdateOrderRequest {
+  status?: string;
+  notes?: string;
+  internal_notes?: string;
+  tracking_number?: string;
+  cancellation_reason?: string;
+  status_note?: string;
 }
 
 export interface ProductListResponse {
@@ -274,3 +338,4 @@ export interface Pagination {
 export interface ApiError {
   error: string;
 }
+

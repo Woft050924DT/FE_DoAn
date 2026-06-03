@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import { Check, MapPin, Truck, CreditCard, CheckCircle, ChevronRight } from "lucide-react";
-import { cartService } from "../../services";
+import { cartService, orderService, addressService } from "../../services";
+import { useApp } from "../../contexts/AppContext";
+import { mapCartItemUi, toNumber } from "../../utils/apiMappers";
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
@@ -15,10 +17,6 @@ const STEPS = [
   { id: 4, label: "Xác nhận", icon: CheckCircle },
 ];
 
-const SAVED_ADDRESSES = [
-  { id: "a1", name: "Nguyễn Văn An", phone: "0901234567", address: "123 Nguyễn Huệ, Phường Bến Nghé, Q1, TP.HCM", isDefault: true, type: "home" },
-  { id: "a2", name: "Nguyễn Văn An", phone: "0901234567", address: "456 Đinh Tiên Hoàng, Phường Đa Kao, Q1, TP.HCM", isDefault: false, type: "office" },
-];
 
 const SHIPPING_OPTIONS = [
   { id: "standard", label: "Tiêu chuẩn", courier: "GHN", eta: "3-5 ngày", price: 30000, date: "19-21/01/2024" },
@@ -38,29 +36,81 @@ const ORDER_ITEMS: any[] = [];
 
 export function ScreensCheckout() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user, refreshCart } = useApp();
+  const couponFromCart = (location.state as { couponCode?: string })?.couponCode || "";
   const [step, setStep] = useState<Step>(1);
-  const [selectedAddress, setSelectedAddress] = useState("a1");
+  const [addresses, setAddresses] = useState<any[]>([]);
+  const [selectedAddress, setSelectedAddress] = useState("");
+  const [orderNumber, setOrderNumber] = useState("");
+  const [placing, setPlacing] = useState(false);
   const [selectedShipping, setSelectedShipping] = useState("express");
   const [selectedPayment, setSelectedPayment] = useState("cod");
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [cartItems, setCartItems] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchCart = async () => {
+    const fetchData = async () => {
       try {
-        const cart = await cartService.getCart();
-        setCartItems(cart.cart_items || []);
+        const [cart, addrList] = await Promise.all([
+          cartService.getCart(),
+          addressService.getAddresses(),
+        ]);
+        setCartItems((cart.cart_items || []).map(mapCartItemUi));
+        const mapped = addrList.map((a) => ({
+          id: a.address_id,
+          name: a.full_name,
+          phone: a.phone,
+          address: [a.address_line1, a.ward, a.district, a.city].filter(Boolean).join(", "),
+          isDefault: a.is_default,
+          type: a.address_type || "home",
+          raw: a,
+        }));
+        setAddresses(mapped);
+        const defaultAddr = mapped.find((a) => a.isDefault) || mapped[0];
+        if (defaultAddr) setSelectedAddress(defaultAddr.id);
       } catch (err) {
         console.error(err);
       }
     };
-    fetchCart();
+    fetchData();
   }, []);
 
   const shipping = SHIPPING_OPTIONS.find((s) => s.id === selectedShipping);
-  const subtotal = cartItems.reduce((s: number, i: any) => s + (i.price || i.product?.price || 0) * i.quantity, 0);
+  const subtotal = cartItems.reduce((s: number, i: any) => s + toNumber(i.price) * i.quantity, 0);
   const total = subtotal + (shipping?.price || 0);
-  const orderNumber = "#DH2024" + Math.floor(Math.random() * 9000 + 1000);
+
+  const placeOrder = async () => {
+    const addr = addresses.find((a) => a.id === selectedAddress)?.raw;
+    if (!addr) {
+      alert("Vui lòng chọn địa chỉ giao hàng");
+      return;
+    }
+    setPlacing(true);
+    try {
+      const order = await orderService.placeOrder({
+        customer_name: addr.full_name || user?.full_name || "",
+        customer_email: user?.email || "",
+        customer_phone: addr.phone || user?.phone,
+        shipping_address_line1: addr.address_line1,
+        shipping_address_line2: addr.address_line2,
+        shipping_city: addr.city,
+        shipping_district: addr.district,
+        shipping_ward: addr.ward,
+        shipping_postal_code: addr.postal_code,
+        payment_method: selectedPayment,
+        shipping_method: selectedShipping,
+        coupon_code: couponFromCart || undefined,
+      });
+      setOrderNumber(order.order_number);
+      await refreshCart();
+      setStep(4);
+    } catch (err: any) {
+      alert(err.response?.data?.error || "Đặt hàng thất bại");
+    } finally {
+      setPlacing(false);
+    }
+  };
 
   const StepProgress = () => (
     <div className="flex items-center justify-center mb-8">
@@ -100,14 +150,14 @@ export function ScreensCheckout() {
       {cartItems.map((item: any) => (
         <div key={item.cart_item_id || item.id} className="flex gap-3 mb-3">
           <div className="relative">
-            <img src={item.image || item.product?.image} alt={item.name || item.product?.name} className="w-14 h-14 object-cover rounded-lg" />
+            <img src={item.image} alt={item.name} className="w-14 h-14 object-cover rounded-lg" />
             <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-[#757575] rounded-full text-white text-[10px] flex items-center justify-center font-bold">
               {item.quantity}
             </span>
           </div>
           <div className="flex-1">
-            <p className="text-xs text-[#212121] line-clamp-2">{item.name || item.product?.name}</p>
-            <p className="text-sm font-semibold text-[#E53935] mt-0.5">{formatCurrency((item.price || item.product?.price || 0) * item.quantity)}</p>
+            <p className="text-xs text-[#212121] line-clamp-2">{item.name}</p>
+            <p className="text-sm font-semibold text-[#E53935] mt-0.5">{formatCurrency(toNumber(item.price) * item.quantity)}</p>
           </div>
         </div>
       ))}
@@ -140,7 +190,7 @@ export function ScreensCheckout() {
             <div className="bg-white rounded-2xl border border-[#E0E0E0] p-6">
               <h2 className="font-bold text-[#212121] mb-5">Chọn địa chỉ giao hàng</h2>
 
-              {SAVED_ADDRESSES.map((addr) => (
+              {addresses.map((addr) => (
                 <label
                   key={addr.id}
                   className={`flex items-start gap-3 p-4 border-2 rounded-xl mb-3 cursor-pointer transition-all ${
@@ -286,7 +336,11 @@ export function ScreensCheckout() {
                 <button onClick={() => setStep(1)} className="flex-1 border border-[#E0E0E0] text-[#212121] py-3 rounded-xl font-medium hover:bg-gray-50">
                   Quay lại
                 </button>
-                <button onClick={() => setStep(3)} className="flex-1 bg-[#E53935] text-white py-3 rounded-xl font-semibold hover:bg-[#C62828] transition-colors">
+                <button
+                  onClick={() => setStep(3)}
+                  disabled={!selectedAddress}
+                  className="flex-1 bg-[#E53935] text-white py-3 rounded-xl font-semibold hover:bg-[#C62828] transition-colors disabled:opacity-40"
+                >
                   Tiếp tục
                 </button>
               </div>
@@ -327,8 +381,12 @@ export function ScreensCheckout() {
                 <button onClick={() => setStep(2)} className="flex-1 border border-[#E0E0E0] text-[#212121] py-3 rounded-xl font-medium hover:bg-gray-50">
                   Quay lại
                 </button>
-                <button onClick={() => setStep(4)} className="flex-1 bg-[#E53935] text-white py-3 rounded-xl font-semibold hover:bg-[#C62828] transition-colors">
-                  Đặt hàng
+                <button
+                  onClick={placeOrder}
+                  disabled={placing}
+                  className="flex-1 bg-[#E53935] text-white py-3 rounded-xl font-semibold hover:bg-[#C62828] transition-colors disabled:opacity-50"
+                >
+                  {placing ? "Đang xử lý..." : "Đặt hàng"}
                 </button>
               </div>
             </div>
@@ -341,7 +399,7 @@ export function ScreensCheckout() {
                 <CheckCircle size={40} className="text-[#2E7D32]" />
               </div>
               <h2 className="text-2xl font-bold text-[#212121] mb-2">Đặt hàng thành công!</h2>
-              <p className="text-[#757575] mb-1">Cảm ơn bạn đã mua sắm tại VietShop</p>
+              <p className="text-[#757575] mb-1">Cảm ơn bạn đã mua sắm tại VietWatch</p>
               <p className="font-bold text-[#212121] text-lg mb-6">{orderNumber}</p>
 
               <div className="bg-[#F5F6FA] rounded-xl p-4 text-left mb-6">

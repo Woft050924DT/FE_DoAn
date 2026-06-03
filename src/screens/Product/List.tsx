@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { ChevronRight, ChevronDown, ChevronUp, SlidersHorizontal, LayoutGrid, List, Search } from "lucide-react";
-import { productService } from "../../services";
+import { productService, catalogService } from "../../services";
+import type { Brand, Category } from "../../services/types";
+import { mapProductCard } from "../../utils/apiMappers";
+import { resolveCategorySlugFromSearchParams } from "../../utils/categorySlugs";
 import { ProductCard } from "../../components/Product/ProductCard";
 
-const BRANDS = ["Apple", "Samsung", "Sony", "Xiaomi", "Oppo", "Lenovo"];
 const SORT_OPTIONS = [
   { value: "newest", label: "Mới nhất" },
   { value: "price_asc", label: "Giá tăng dần" },
@@ -13,35 +15,17 @@ const SORT_OPTIONS = [
   { value: "sold", label: "Bán chạy nhất" },
 ];
 
-const CATEGORY_TREE = [
-  { name: "Điện tử", children: ["Điện thoại", "Laptop", "Máy tính bảng", "Màn hình"] },
-  { name: "Thời trang", children: ["Áo nam", "Quần nữ", "Phụ kiện"] },
-  { name: "Nhà cửa", children: ["Nội thất", "Thiết bị", "Trang trí"] },
-  { name: "Âm thanh", children: ["Tai nghe", "Loa", "Micro"] },
-];
-
-const transformProduct = (apiProduct: any) => ({
-  id: apiProduct.product_id,
-  name: apiProduct.name,
-  brand: apiProduct.brands?.name || "",
-  category: apiProduct.categories?.name || "",
-  sku: apiProduct.sku,
-  price: apiProduct.price,
-  comparePrice: apiProduct.compare_price,
-  image: apiProduct.product_images?.find((img: any) => img.is_primary)?.image_url || apiProduct.product_images?.[0]?.image_url || "",
-  images: apiProduct.product_images?.map((img: any) => img.image_url) || [],
-  rating: apiProduct.product_reviews?.length > 0 
-    ? apiProduct.product_reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / apiProduct.product_reviews.length 
-    : 4.5,
-  reviewCount: apiProduct.product_reviews?.length || 0,
-  sold: apiProduct.view_count || 0,
-  stock: apiProduct.product_variants?.reduce((sum: number, v: any) => sum + v.stock_quantity, 0) || 0,
-  badge: apiProduct.new_arrival ? "NEW" : apiProduct.featured ? "HOT" : null,
-  discount: apiProduct.compare_price ? Math.round((1 - apiProduct.price / apiProduct.compare_price) * 100) : 0,
-  featured: apiProduct.featured,
-  status: apiProduct.status,
-  description: apiProduct.description || apiProduct.short_description || "",
-});
+function buildCategoryTree(categories: Category[]) {
+  const roots = categories.filter((c) => !c.parent_id);
+  return roots.map((root) => ({
+    id: root.category_id,
+    slug: root.slug,
+    name: root.name,
+    children: categories
+      .filter((c) => c.parent_id === root.category_id)
+      .map((c) => ({ id: c.category_id, slug: c.slug, name: c.name })),
+  }));
+}
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
@@ -50,8 +34,10 @@ const STATUS_FILTERS = ["Còn hàng", "Đang giảm giá", "Hàng mới", "Bán 
 
 export function ScreensProductList() {
   const navigate = useNavigate();
-  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const [products, setProducts] = useState<any[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sort, setSort] = useState("newest");
@@ -59,22 +45,50 @@ export function ScreensProductList() {
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState([0, 50000000]);
   const [selectedRatings, setSelectedRatings] = useState<number[]>([]);
-  const [expandedCat, setExpandedCat] = useState<string | null>("Điện tử");
+  const [expandedCat, setExpandedCat] = useState<string | null>(null);
   const [activeStatusFilters, setActiveStatusFilters] = useState<string[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
 
   useEffect(() => {
+    const loadCatalog = async () => {
+      try {
+        const [brandList, categoryList] = await Promise.all([
+          catalogService.getBrands(),
+          catalogService.getCategories(),
+        ]);
+        setBrands(brandList);
+        setCategories(categoryList);
+        const tree = buildCategoryTree(categoryList);
+        if (tree.length > 0) setExpandedCat(tree[0].name);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    loadCatalog();
+  }, []);
+
+  useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const data = await productService.getProducts({ 
-          page: pagination.page, 
+        const categoryFilter = resolveCategorySlugFromSearchParams(
+          searchParams.get("category_id"),
+          searchParams.get("cat"),
+          searchParams.get("category_slug")
+        );
+        const data = await productService.getProducts({
+          page: pagination.page,
           limit: pagination.limit,
-          featured: activeStatusFilters.includes("Hàng mới") ? undefined : activeStatusFilters.includes("Bán chạy") ? undefined : undefined
+          search: searchParams.get("q") || undefined,
+          ...categoryFilter,
+          best_seller: searchParams.get("sort") === "sold" || undefined,
+          new_arrival: searchParams.get("sort") === "new" || undefined,
+          featured: searchParams.get("sale") === "true" || undefined,
         });
-        setProducts(data.products.map(transformProduct));
+        setProducts(data.products.map(mapProductCard));
         setPagination(data.pagination);
+        setError(null);
       } catch (err) {
         setError("Không thể tải danh sách sản phẩm");
         console.error(err);
@@ -83,7 +97,7 @@ export function ScreensProductList() {
       }
     };
     fetchProducts();
-  }, [pagination.page, pagination.limit]);
+  }, [searchParams, pagination.page, pagination.limit]);
 
   const toggleBrand = (brand: string) =>
     setSelectedBrands((prev) => prev.includes(brand) ? prev.filter((b) => b !== brand) : [...prev, brand]);
@@ -94,13 +108,17 @@ export function ScreensProductList() {
   const toggleStatus = (s: string) =>
     setActiveStatusFilters((prev) => prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]);
 
-  const sortedProducts = [...products].sort((a, b) => {
-    if (sort === "price_asc") return a.price - b.price;
-    if (sort === "price_desc") return b.price - a.price;
-    if (sort === "rating") return b.rating - a.rating;
-    if (sort === "sold") return b.sold - a.sold;
-    return 0;
-  });
+  const categoryTree = buildCategoryTree(categories);
+
+  const sortedProducts = [...products]
+    .filter((p) => selectedBrands.length === 0 || selectedBrands.includes(p.brand))
+    .sort((a, b) => {
+      if (sort === "price_asc") return a.price - b.price;
+      if (sort === "price_desc") return b.price - a.price;
+      if (sort === "rating") return b.rating - a.rating;
+      if (sort === "sold") return b.sold - a.sold;
+      return 0;
+    });
 
   const SidebarContent = () => (
     <div className="space-y-5">
@@ -108,23 +126,27 @@ export function ScreensProductList() {
       <div>
         <h4 className="font-semibold text-[#212121] mb-3 text-sm">Danh mục</h4>
         <div className="space-y-1">
-          {CATEGORY_TREE.map((cat) => (
-            <div key={cat.name}>
+          {categoryTree.map((cat) => (
+            <div key={cat.id}>
               <button
                 className="w-full flex items-center justify-between py-1.5 text-sm text-[#212121] hover:text-[#1565C0]"
-                onClick={() => setExpandedCat(expandedCat === cat.name ? null : cat.name)}
+                onClick={() => {
+                  navigate(`/products?category_slug=${cat.slug}`);
+                  setExpandedCat(expandedCat === cat.name ? null : cat.name);
+                }}
               >
                 <span>{cat.name}</span>
                 {expandedCat === cat.name ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </button>
-              {expandedCat === cat.name && (
+              {expandedCat === cat.name && cat.children.length > 0 && (
                 <div className="pl-3 space-y-1 mb-1">
                   {cat.children.map((child) => (
                     <button
-                      key={child}
+                      key={child.id}
+                      onClick={() => navigate(`/products?category_slug=${child.slug}`)}
                       className="block w-full text-left py-1 text-xs text-[#757575] hover:text-[#1565C0] hover:font-medium"
                     >
-                      {child}
+                      {child.name}
                     </button>
                   ))}
                 </div>
@@ -140,15 +162,15 @@ export function ScreensProductList() {
       <div>
         <h4 className="font-semibold text-[#212121] mb-3 text-sm">Thương hiệu</h4>
         <div className="space-y-2">
-          {BRANDS.map((brand) => (
-            <label key={brand} className="flex items-center gap-2 cursor-pointer group">
+          {brands.map((brand) => (
+            <label key={brand.brand_id} className="flex items-center gap-2 cursor-pointer group">
               <input
                 type="checkbox"
-                checked={selectedBrands.includes(brand)}
-                onChange={() => toggleBrand(brand)}
+                checked={selectedBrands.includes(brand.name)}
+                onChange={() => toggleBrand(brand.name)}
                 className="w-4 h-4 rounded border-[#E0E0E0] accent-[#1565C0]"
               />
-              <span className="text-sm text-[#212121] group-hover:text-[#1565C0]">{brand}</span>
+              <span className="text-sm text-[#212121] group-hover:text-[#1565C0]">{brand.name}</span>
             </label>
           ))}
         </div>
@@ -290,9 +312,9 @@ export function ScreensProductList() {
       <div className="flex items-center gap-1 text-sm text-[#757575] mb-5">
         <button onClick={() => navigate("/")} className="hover:text-[#E53935]">Trang chủ</button>
         <ChevronRight size={13} />
-        <button onClick={() => navigate("/products")} className="hover:text-[#E53935]">Điện tử</button>
+        <button onClick={() => navigate("/products")} className="hover:text-[#E53935]">Đồng hồ</button>
         <ChevronRight size={13} />
-        <span className="text-[#212121] font-medium">Điện thoại</span>
+        <span className="text-[#212121] font-medium">Tất cả</span>
       </div>
 
       <div className="flex gap-6">

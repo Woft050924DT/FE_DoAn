@@ -2,66 +2,45 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { ChevronLeft, ChevronRight, Clock, ArrowRight } from "lucide-react";
 import { ProductCard } from "../../components/Product/ProductCard";
-import { productService } from "../../services";
+import { productService, catalogService } from "../../services";
+import { mapProductCard, toNumber } from "../../utils/apiMappers";
 
 const HERO_SLIDES = [
   {
     id: 1,
-    image: "https://images.unsplash.com/photo-1677172954692-90cf8bdc91e6?w=1200&q=80",
-    title: "Công Nghệ Đỉnh Cao",
-    subtitle: "Samsung QLED 4K - Trải nghiệm hình ảnh vượt trội",
+    image: "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=1200&q=80",
+    title: "Đồng Hồ Cao Cấp",
+    subtitle: "Bộ sưu tập mới — Thiết kế tinh xảo, chính hãng quốc tế",
     cta: "Mua ngay",
-    bg: "from-blue-900/70",
+    bg: "from-slate-900/70",
   },
   {
     id: 2,
-    image: "https://images.unsplash.com/photo-1673718424091-5fb734062c05?w=1200&q=80",
-    title: "iPhone 15 Pro Max",
-    subtitle: "Titan. Mạnh mẽ. Đột phá — Giảm đến 17%",
+    image: "https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=1200&q=80",
+    title: "Đồng Hồ Nam",
+    subtitle: "Phong cách lịch lãm — Giảm đến 20% tuần này",
     cta: "Khám phá",
     bg: "from-gray-900/70",
   },
   {
     id: 3,
-    image: "https://images.unsplash.com/photo-1766524871302-88590e1fa1bf?w=1200&q=80",
-    title: "Thời Trang Mùa Hè",
-    subtitle: "Bộ sưu tập mới — Giảm đến 50%",
+    image: "https://images.unsplash.com/photo-1542496654-2619d752d938?w=1200&q=80",
+    title: "Smartwatch Thông Minh",
+    subtitle: "Theo dõi sức khỏe, kết nối đa thiết bị — Giảm đến 15%",
     cta: "Xem bộ sưu tập",
     bg: "from-rose-900/70",
   },
 ];
 
 const CATEGORIES = [
-  { id: "1", name: "Điện thoại", icon: "", count: 245 },
-  { id: "2", name: "Laptop", icon: "", count: 128 },
-  { id: "3", name: "Thời trang", icon: "", count: 892 },
-  { id: "4", name: "Nhà cửa", icon: "", count: 456 },
-  { id: "5", name: "Âm thanh", icon: "", count: 167 },
-  { id: "6", name: "Đồng hồ", icon: "", count: 89 },
+  { id: "1", name: "Đồng hồ nam", icon: "⌚", count: 186 },
+  { id: "2", name: "Đồng hồ nữ", icon: "💎", count: 142 },
+  { id: "3", name: "Smartwatch", icon: "📱", count: 98 },
+  { id: "4", name: "Cao cấp", icon: "✨", count: 64 },
+  { id: "5", name: "Thể thao", icon: "🏃", count: 112 },
+  { id: "6", name: "Phụ kiện", icon: "🔗", count: 76 },
 ];
 
-const transformProduct = (apiProduct: any) => ({
-  id: apiProduct.product_id,
-  name: apiProduct.name,
-  brand: apiProduct.brands?.name || "",
-  category: apiProduct.categories?.name || "",
-  sku: apiProduct.sku,
-  price: apiProduct.price,
-  comparePrice: apiProduct.compare_price,
-  image: apiProduct.product_images?.find((img: any) => img.is_primary)?.image_url || apiProduct.product_images?.[0]?.image_url || "",
-  images: apiProduct.product_images?.map((img: any) => img.image_url) || [],
-  rating: apiProduct.product_reviews?.length > 0 
-    ? apiProduct.product_reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / apiProduct.product_reviews.length 
-    : 4.5,
-  reviewCount: apiProduct.product_reviews?.length || 0,
-  sold: apiProduct.view_count || 0,
-  stock: apiProduct.product_variants?.reduce((sum: number, v: any) => sum + v.stock_quantity, 0) || 0,
-  badge: apiProduct.new_arrival ? "NEW" : apiProduct.featured ? "HOT" : null,
-  discount: apiProduct.compare_price ? Math.round((1 - apiProduct.price / apiProduct.compare_price) * 100) : 0,
-  featured: apiProduct.featured,
-  status: apiProduct.status,
-  description: apiProduct.description || apiProduct.short_description || "",
-});
 
 function useCountdown() {
   const [time, setTime] = useState({ h: 5, m: 23, s: 47 });
@@ -101,7 +80,10 @@ function SectionHeader({ title, link }: { title: string; link?: string }) {
 export function ScreensHome() {
   const navigate = useNavigate();
   const [slide, setSlide] = useState(0);
-  const [products, setProducts] = useState<any[]>([]);
+  const [bestSellers, setBestSellers] = useState<any[]>([]);
+  const [newArrivals, setNewArrivals] = useState<any[]>([]);
+  const [flashSale, setFlashSale] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>(CATEGORIES);
   const [loading, setLoading] = useState(true);
   const countdown = useCountdown();
 
@@ -114,8 +96,31 @@ export function ScreensHome() {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const data = await productService.getProducts({ limit: 20 });
-        setProducts(data.products.map(transformProduct));
+        const [best, newest, all, cats] = await Promise.all([
+          productService.getBestSellerProducts(8),
+          productService.getNewArrivalProducts(8),
+          productService.getProducts({ limit: 12 }),
+          catalogService.getCategories(),
+        ]);
+        setBestSellers(best.products.map(mapProductCard));
+        setNewArrivals(newest.products.map(mapProductCard));
+        setFlashSale(
+          all.products
+            .filter((p) => p.compare_price && toNumber(p.compare_price) > toNumber(p.price))
+            .map(mapProductCard)
+            .slice(0, 6)
+        );
+        if (cats.length) {
+          setCategories(
+            cats.slice(0, 6).map((c) => ({
+              id: c.category_id,
+              slug: c.slug,
+              name: c.name,
+              icon: c.icon || "⌚",
+              count: c._count?.products ?? 0,
+            }))
+          );
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -124,10 +129,6 @@ export function ScreensHome() {
     };
     fetchProducts();
   }, []);
-
-  const flashSaleProducts = products.filter((p) => p.badge === "SALE").slice(0, 6);
-  const bestSellers = products.slice(0, 8);
-  const newArrivals = products.filter((p) => p.badge === "NEW" || p.id > "4").slice(0, 8);
 
   const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -188,10 +189,12 @@ export function ScreensHome() {
         <div className="mb-10">
           <SectionHeader title="📦 Danh mục nổi bật" />
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-            {CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <button
                 key={cat.id}
-                onClick={() => navigate(`/products?cat=${cat.name}`)}
+                onClick={() =>
+                  navigate(cat.slug ? `/products?category_slug=${cat.slug}` : `/products?category_id=${cat.id}`)
+                }
                 className="bg-white rounded-xl p-4 flex flex-col items-center gap-2 border border-[#E0E0E0] hover:border-[#E53935] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group"
               >
                 <span className="text-2xl">{cat.icon}</span>
@@ -220,7 +223,7 @@ export function ScreensHome() {
             </button>
           </div>
           <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4">
-            {flashSaleProducts.map((product) => (
+            {flashSale.map((product) => (
               <div key={product.id} className="shrink-0 w-[200px]">
                 <ProductCard
                   product={product}
@@ -235,7 +238,7 @@ export function ScreensHome() {
         <div className="mb-10">
           <SectionHeader title="🏆 Bán chạy nhất" link="/products?sort=sold" />
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {bestSellers.map((product) => (
+            {bestSellers.map((product: any) => (
               <ProductCard
                 key={product.id}
                 product={product}
@@ -249,7 +252,7 @@ export function ScreensHome() {
         <div className="mb-10">
           <SectionHeader title="🆕 Hàng mới về" link="/products?sort=new" />
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {newArrivals.slice(0, 8).map((product) => (
+            {newArrivals.slice(0, 8).map((product: any) => (
               <ProductCard
                 key={product.id}
                 product={product}
@@ -262,14 +265,14 @@ export function ScreensHome() {
         {/* Promo Banner */}
         <div className="rounded-2xl overflow-hidden relative h-48 mb-2">
           <img
-            src="https://images.unsplash.com/photo-1631543561902-b7dca288ac1b?w=1200&q=80"
+            src="https://images.unsplash.com/photo-1612817159947-93bb511b5ecc?w=1200&q=80"
             alt="Promo"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-[#1565C0]/80 to-transparent flex items-center">
             <div className="px-10">
               <p className="text-white/80 text-sm mb-1">Ưu đãi đặc biệt</p>
-              <h3 className="text-white text-2xl font-bold mb-3">Laptop MacBook Pro M3<br />Giảm đến 14%</h3>
+              <h3 className="text-white text-2xl font-bold mb-3">Citizen Eco-Drive<br />Giảm đến 14%</h3>
               <button
                 onClick={() => navigate("/products/3")}
                 className="bg-white text-[#1565C0] text-sm font-semibold px-5 py-2 rounded-lg hover:bg-blue-50 transition-colors"

@@ -1,5 +1,5 @@
 import apiClient from './apiClient';
-import { PlaceOrderRequest, Order, OrderListParams, OrderListResponse } from './types';
+import { PlaceOrderRequest, Order, OrderListParams, OrderListResponse, UpdateOrderRequest } from './types';
 
 export const orderService = {
   /**
@@ -41,5 +41,10 @@ export const orderService = {
   async cancelOrder(orderId: string, reason: string): Promise<Order> {
     const response = await apiClient.post<Order>(`/api/orders/${orderId}/cancel`, { reason });
     return response.data;
-  }
+  },
+
+  async updateOrder(orderId: string, data: UpdateOrderRequest): Promise<Order> {
+    const response = await apiClient.patch<Order>(`/api/orders/${orderId}`, data);
+    return response.data;
+  },
 };
