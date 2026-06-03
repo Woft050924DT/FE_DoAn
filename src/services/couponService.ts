@@ -6,7 +6,7 @@ export const couponService = {
     return response.data as {
       valid: boolean;
       code: string;
-      discount_amount: number;
+      
       discount_type: string;
       description?: string;
     };
