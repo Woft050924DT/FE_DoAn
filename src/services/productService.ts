@@ -1,5 +1,12 @@
 import apiClient from './apiClient';
-import { Product, ProductDetail, ProductListParams, ProductListResponse } from './types';
+import {
+  Product,
+  ProductDetail,
+  ProductListParams,
+  ProductListResponse,
+  CreateProductRequest,
+  UpdateProductRequest,
+} from './types';
 
 export const productService = {
   /**
@@ -88,5 +95,20 @@ export const productService = {
       params: { brand_id: brandId, ...params }
     });
     return response.data;
-  }
+  },
+
+  async createProduct(data: CreateProductRequest): Promise<ProductDetail> {
+    const response = await apiClient.post<ProductDetail>('/api/products', data);
+    return response.data;
+  },
+
+  async updateProduct(id: string, data: UpdateProductRequest): Promise<ProductDetail> {
+    const response = await apiClient.put<ProductDetail>(`/api/products/${id}`, data);
+    return response.data;
+  },
+
+  async deleteProduct(id: string): Promise<{ success: boolean; deleted: boolean; archived?: boolean }> {
+    const response = await apiClient.delete(`/api/products/${id}`);
+    return response.data;
+  },
 };

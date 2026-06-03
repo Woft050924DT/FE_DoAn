@@ -1,6 +1,9 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { Star, ShoppingCart, Heart } from "lucide-react";
 import { cartService } from "../../services/cartService";
+import { useApp } from "../../contexts/AppContext";
+import { authService } from "../../services/authService";
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
@@ -18,6 +21,7 @@ interface Product {
   badge?: string;
   discount?: number;
   stock?: number;
+  defaultVariantId?: string | null;
 }
 
 interface ProductCardProps {
@@ -26,21 +30,29 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, onClick }: ProductCardProps) {
+  const navigate = useNavigate();
+  const { refreshCart } = useApp();
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [addingToCart, setAddingToCart] = useState(false);
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!authService.isAuthenticated()) {
+      navigate("/login");
+      return;
+    }
     setAddingToCart(true);
     try {
       await cartService.addToCart({
         product_id: product.id,
+        variant_id: product.defaultVariantId || undefined,
         quantity: 1,
       });
-      // Could add toast notification here
-    } catch (error) {
-      console.error("Failed to add to cart:", error);
+      await refreshCart();
+    } catch (error: any) {
+      if (error.response?.status === 401) navigate("/login");
+      else alert(error.response?.data?.error || "Không thể thêm vào giỏ");
     } finally {
       setAddingToCart(false);
     }

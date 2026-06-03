@@ -1,5 +1,3 @@
-import { MoreVertical } from "lucide-react";
-
 interface Column<T> {
   key: string;
   header: string;
@@ -72,10 +70,8 @@ export function TableDataTable<T>({
                   </td>
                 ))}
                 {renderRowActions && (
-                  <td className="px-4 py-3.5">
-                    <button className="p-1 hover:bg-gray-100 rounded">
-                      <MoreVertical size={15} className="text-[#757575]" />
-                    </button>
+                  <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                    {renderRowActions(item)}
                   </td>
                 )}
               </tr>

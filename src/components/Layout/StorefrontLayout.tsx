@@ -1,25 +1,33 @@
 import { useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router";
+import { useApp } from "../../contexts/AppContext";
 import {
-  Search, Bell, MessageCircle, ChevronDown, ShoppingCart,
-  Facebook, Instagram, Youtube, User, Menu, X, Zap
+  Search, Bell, ChevronDown, ShoppingCart,
+  Facebook, Instagram, Youtube, User, Menu, X, Watch
 } from "lucide-react";
-import { ChatWidget } from "../Chat/ChatWidget";
 
 const NAV_LINKS = [
   { label: "Tất cả danh mục", path: "/products" },
-  { label: "Điện tử", path: "/products?cat=electronics" },
-  { label: "Thời trang", path: "/products?cat=fashion" },
-  { label: "Nhà cửa", path: "/products?cat=home" },
+  { label: "Đồng hồ nam", path: "/products?category_slug=dong-ho-nam" },
+  { label: "Đồng hồ nữ", path: "/products?category_slug=dong-ho-nu" },
+  { label: "Smartwatch", path: "/products?category_slug=smartwatch" },
   { label: "Flash Sale 🔥", path: "/products?sale=true", red: true },
 ];
 
 export function LayoutStorefront() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, cartCount, isAuthenticated } = useApp();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [cartCount] = useState(3);
+
+  const userInitials =
+    user?.full_name
+      ?.split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) || "NA";
 
   return (
     <div className="min-h-screen bg-[#F5F6FA] flex flex-col">
@@ -33,9 +41,9 @@ export function LayoutStorefront() {
             onClick={() => navigate("/")}
           >
             <div className="w-8 h-8 bg-[#E53935] rounded-lg flex items-center justify-center">
-              <Zap size={18} className="text-white" />
+              <Watch size={18} className="text-white" />
             </div>
-            <span className="text-lg font-bold text-[#212121] hidden sm:block">VietShop</span>
+            <span className="text-lg font-bold text-[#212121] hidden sm:block">VietWatch</span>
           </div>
 
           {/* Search */}
@@ -44,7 +52,7 @@ export function LayoutStorefront() {
               <Search size={16} className="absolute left-3 text-[#757575]" />
               <input
                 type="text"
-                placeholder="Tìm kiếm sản phẩm..."
+                placeholder="Tìm kiếm đồng hồ, thương hiệu..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-4 py-2 border border-[#E0E0E0] rounded-full text-sm focus:outline-none focus:border-[#1565C0] bg-[#F5F6FA]"
@@ -78,10 +86,14 @@ export function LayoutStorefront() {
             </button>
             <button
               className="hidden sm:flex items-center gap-1.5 pl-1 pr-3 py-1 hover:bg-gray-100 rounded-full"
-              onClick={() => navigate("/account")}
+              onClick={() => navigate(isAuthenticated ? "/account" : "/login")}
             >
-              <div className="w-7 h-7 bg-[#1565C0] rounded-full flex items-center justify-center text-white text-xs font-bold">NA</div>
-              <span className="text-sm text-[#212121] hidden md:block">Tài khoản</span>
+              <div className="w-7 h-7 bg-[#1565C0] rounded-full flex items-center justify-center text-white text-xs font-bold">
+                {userInitials}
+              </div>
+              <span className="text-sm text-[#212121] hidden md:block">
+                {isAuthenticated ? user?.full_name?.split(" ").pop() || "Tài khoản" : "Đăng nhập"}
+              </span>
               <ChevronDown size={14} className="text-[#757575] hidden md:block" />
             </button>
             <button className="sm:hidden p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
@@ -137,11 +149,11 @@ export function LayoutStorefront() {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-7 h-7 bg-[#E53935] rounded-lg flex items-center justify-center">
-                  <Zap size={14} className="text-white" />
+                  <Watch size={14} className="text-white" />
                 </div>
-                <span className="text-white font-bold">VietShop</span>
+                <span className="text-white font-bold">VietWatch</span>
               </div>
-              <p className="text-sm text-gray-400 leading-relaxed">Mua sắm thông minh, tiết kiệm tối đa với hàng ngàn sản phẩm chính hãng.</p>
+              <p className="text-sm text-gray-400 leading-relaxed">Đồng hồ chính hãng — từ phong cách hằng ngày đến cao cấp, bảo hành toàn quốc.</p>
             </div>
             <div>
               <h4 className="text-white font-semibold mb-3">Hỗ trợ khách hàng</h4>
@@ -163,7 +175,7 @@ export function LayoutStorefront() {
               <h4 className="text-white font-semibold mb-3">Liên hệ</h4>
               <ul className="space-y-1.5 text-sm text-gray-400">
                 <li>📞 1800 1234 (Miễn phí)</li>
-                <li>✉️ support@vietshop.vn</li>
+                <li>✉️ support@vietwatch.vn</li>
                 <li>⏰ 8:00 - 22:00 (T2 - CN)</li>
               </ul>
               <div className="flex gap-3 mt-4">
@@ -177,7 +189,7 @@ export function LayoutStorefront() {
           </div>
 
           <div className="border-t border-white/10 mt-8 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-xs text-gray-500">© 2024 VietShop. Tất cả quyền được bảo lưu.</p>
+            <p className="text-xs text-gray-500">© 2024 VietWatch. Tất cả quyền được bảo lưu.</p>
             <div className="flex items-center gap-3">
               {["COD", "Bank", "MoMo", "VNPay"].map(method => (
                 <span key={method} className="text-xs bg-white/10 px-2 py-1 rounded font-medium text-gray-300">{method}</span>
@@ -187,8 +199,6 @@ export function LayoutStorefront() {
         </div>
       </footer>
 
-      {/* Floating Chat Widget */}
-      <ChatWidget />
     </div>
   );
 }

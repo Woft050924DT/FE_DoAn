@@ -1,10 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { Mail, Lock, Eye, EyeOff, ArrowRight, ShoppingBag } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Watch } from "lucide-react";
 import { authService } from "../../services/authService";
+import { useApp } from "../../contexts/AppContext";
+import { useLocation, Link } from "react-router";
+import { isAdminUser } from "../../utils/roles";
 
 export function ScreensLogin() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { refreshAuth } = useApp();
+  const from = (location.state as { from?: string })?.from || "/account";
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -20,11 +26,16 @@ export function ScreensLogin() {
     setLoading(true);
 
     try {
-      await authService.login({
+      const result = await authService.login({
         email: formData.email,
         password: formData.password,
       });
-      navigate("/account");
+      await refreshAuth();
+      if (isAdminUser(result.user)) {
+        navigate(from.startsWith("/admin") ? from : "/admin", { replace: true });
+      } else {
+        navigate(from.startsWith("/admin") ? "/account" : from, { replace: true });
+      }
     } catch (err) {
       setError("Đăng nhập thất bại. Vui lòng kiểm tra email và mật khẩu.");
       console.error("Login error:", err);
@@ -39,10 +50,16 @@ export function ScreensLogin() {
         {/* Logo/Brand */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-[#1565C0] rounded-2xl mb-4 shadow-lg">
-            <ShoppingBag size={32} className="text-white" />
+            <Watch size={32} className="text-white" />
           </div>
           <h1 className="text-2xl font-bold text-[#212121]">Chào mừng trở lại!</h1>
-          <p className="text-sm text-[#757575] mt-1">Đăng nhập để tiếp tục mua sắm</p>
+          <p className="text-sm text-[#757575] mt-1">Đăng nhập để tiếp tục mua sắm đồng hồ</p>
+        </div>
+
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-xl text-xs text-[#1565C0] text-left space-y-1">
+          <p className="font-semibold text-[#212121]">Tài khoản demo</p>
+          <p>Admin: <strong>admin@shopai.com</strong> / <strong>admin123</strong></p>
+          <p>Khách hàng: <strong>customer@shopai.com</strong> / <strong>customer123</strong></p>
         </div>
 
         {/* Login Card */}
@@ -164,12 +181,9 @@ export function ScreensLogin() {
           <div className="px-8 py-4 bg-[#F5F6FA] border-t border-[#E0E0E0] text-center">
             <p className="text-sm text-[#757575]">
               Chưa có tài khoản?{" "}
-              <button
-                onClick={() => navigate("/register")}
-                className="text-[#1565C0] font-semibold hover:underline"
-              >
+              <Link to="/register" className="text-[#1565C0] font-semibold hover:underline">
                 Đăng ký ngay
-              </button>
+              </Link>
             </p>
           </div>
         </div>
