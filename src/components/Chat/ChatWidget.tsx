@@ -216,7 +216,7 @@ export function ChatWidget() {
                       ) : msg.productCard ? (
                         <div className="bg-white rounded-xl p-3 border border-[#E0E0E0] shadow-sm">
                           <div className="flex gap-2">
-                            <img src={msg.productCard.image} alt="" className="w-12 h-12 rounded-lg object-cover" />
+                            <img src={msg.productCard.image || null} alt="" className="w-12 h-12 rounded-lg object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                             <div className="flex-1">
                               <p className="text-xs font-medium text-[#212121] line-clamp-2">{msg.productCard.name}</p>
                               <p className="text-sm text-[#E53935] font-semibold mt-1">{msg.productCard.price}</p>

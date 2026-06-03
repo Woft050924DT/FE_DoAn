@@ -48,7 +48,7 @@ const transformProduct = (apiProduct: any) => ({
   sku: apiProduct.sku,
   price: apiProduct.price,
   comparePrice: apiProduct.compare_price,
-  image: apiProduct.product_images?.find((img: any) => img.is_primary)?.image_url || apiProduct.product_images?.[0]?.image_url || "",
+  image: apiProduct.product_images?.find((img: any) => img.is_primary)?.image_url || apiProduct.product_images?.[0]?.image_url || null,
   images: apiProduct.product_images?.map((img: any) => img.image_url) || [],
   rating: apiProduct.product_reviews?.length > 0 
     ? apiProduct.product_reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / apiProduct.product_reviews.length 

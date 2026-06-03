@@ -25,7 +25,7 @@ const transformProduct = (apiProduct: any) => ({
   sku: apiProduct.sku,
   price: apiProduct.price,
   comparePrice: apiProduct.compare_price,
-  image: apiProduct.product_images?.find((img: any) => img.is_primary)?.image_url || apiProduct.product_images?.[0]?.image_url || "",
+  image: apiProduct.product_images?.find((img: any) => img.is_primary)?.image_url || apiProduct.product_images?.[0]?.image_url || null,
   images: apiProduct.product_images?.map((img: any) => img.image_url) || [],
   rating: apiProduct.product_reviews?.length > 0 
     ? apiProduct.product_reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / apiProduct.product_reviews.length 
@@ -461,7 +461,7 @@ export function ScreensProductList() {
                     className="bg-white rounded-xl border border-[#E0E0E0] p-4 flex gap-4 hover:shadow-md transition-shadow cursor-pointer"
                     onClick={() => navigate(`/products/${product.id}`)}
                   >
-                    <img src={product.image} alt={product.name} className="w-24 h-24 object-cover rounded-lg" />
+                    <img src={product.image || null} alt={product.name} className="w-24 h-24 object-cover rounded-lg" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                     <div className="flex-1">
                       <p className="text-xs text-[#757575]">{product.brand}</p>
                       <p className="font-medium text-[#212121] mt-0.5 line-clamp-2">{product.name}</p>

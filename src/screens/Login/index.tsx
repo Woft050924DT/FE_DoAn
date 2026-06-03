@@ -20,11 +20,19 @@ export function ScreensLogin() {
     setLoading(true);
 
     try {
-      await authService.login({
+      const result = await authService.login({
         email: formData.email,
         password: formData.password,
       });
-      navigate("/account");
+
+      const role = result.user?.role?.toLowerCase();
+      if (role === "admin") {
+        navigate("/admin");
+      } else if (role === "staff") {
+        navigate("/staff");
+      } else {
+        navigate("/account");
+      }
     } catch (err) {
       setError("Đăng nhập thất bại. Vui lòng kiểm tra email và mật khẩu.");
       console.error("Login error:", err);

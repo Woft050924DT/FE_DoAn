@@ -21,7 +21,7 @@ const normalizeCartProduct = (item: any) => {
 
   return {
     ...product,
-    image: product.image || primaryImage || product.product_images?.[0]?.image_url || "",
+    image: product.image || primaryImage || product.product_images?.[0]?.image_url || null,
     name: product.name || item.name || "",
     price: item.price || product.price || 0,
     compare_price: product.compare_price,
@@ -153,10 +153,11 @@ export function ScreensCart() {
                   className="w-4 h-4 accent-[#1565C0] cursor-pointer mt-1 shrink-0"
                 />
                 <img
-                  src={item.product.image}
+                  src={item.product.image || null}
                   alt={item.product.name}
                   className="w-20 h-20 object-cover rounded-lg border border-[#E0E0E0] shrink-0 cursor-pointer"
                   onClick={() => navigate(`/products/${item.product.product_id}`)}
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
                 <div className="flex-1 min-w-0">
                   <p

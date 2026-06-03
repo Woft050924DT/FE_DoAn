@@ -1,12 +1,22 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Check, MapPin, Truck, CreditCard, CheckCircle, ChevronRight } from "lucide-react";
-import { cartService, orderService } from "../../services";
+import { cartService, orderService, profileService } from "../../services";
+import { Address } from "../../services/types";
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
 
 type Step = 1 | 2 | 3 | 4;
+type CheckoutAddress = {
+  id: string;
+  name: string;
+  phone: string;
+  address: string;
+  isDefault: boolean;
+  type: string;
+  apiAddress?: Address;
+};
 
 const STEPS = [
   { id: 1, label: "Địa chỉ", icon: MapPin },
@@ -19,6 +29,18 @@ const SAVED_ADDRESSES = [
   { id: "a1", name: "Nguyễn Văn An", phone: "0901234567", address: "123 Nguyễn Huệ, Phường Bến Nghé, Q1, TP.HCM", isDefault: true, type: "home" },
   { id: "a2", name: "Nguyễn Văn An", phone: "0901234567", address: "456 Đinh Tiên Hoàng, Phường Đa Kao, Q1, TP.HCM", isDefault: false, type: "office" },
 ];
+
+const toCheckoutAddress = (addr: Address): CheckoutAddress => ({
+  id: addr.address_id,
+  name: addr.full_name,
+  phone: addr.phone,
+  address: [addr.address_line1, addr.address_line2, addr.ward, addr.district, addr.city]
+    .filter(Boolean)
+    .join(", "),
+  isDefault: addr.is_default,
+  type: addr.address_type,
+  apiAddress: addr,
+});
 
 const SHIPPING_OPTIONS = [
   { id: "standard", label: "Tiêu chuẩn", courier: "GHN", eta: "3-5 ngày", price: 30000, date: "19-21/01/2024" },
@@ -44,13 +66,13 @@ const normalizeCartItem = (item: any) => {
     ...item,
     product: {
       ...product,
-      image: product.image || primaryImage || product.product_images?.[0]?.image_url || "",
+      image: product.image || primaryImage || product.product_images?.[0]?.image_url || null,
       name: product.name || item.name || "",
       price: item.price || product.price || 0,
     },
     price: item.price || product.price || 0,
     name: product.name || item.name || "",
-    image: product.image || primaryImage || product.product_images?.[0]?.image_url || "",
+    image: product.image || primaryImage || product.product_images?.[0]?.image_url || null,
   };
 };
 
@@ -73,7 +95,7 @@ export function ScreensCheckout() {
   const [selectedPayment, setSelectedPayment] = useState("cod");
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [cartItems, setCartItems] = useState<any[]>([]);
-  const [addresses, setAddresses] = useState(SAVED_ADDRESSES);
+  const [addresses, setAddresses] = useState<CheckoutAddress[]>(SAVED_ADDRESSES);
   const [newAddress, setNewAddress] = useState({
     name: "",
     phone: "",
@@ -82,6 +104,7 @@ export function ScreensCheckout() {
     district: "",
     ward: "",
     type: "home",
+    isDefault: false,
   });
   const [placingOrder, setPlacingOrder] = useState(false);
   const [orderError, setOrderError] = useState("");
@@ -97,6 +120,22 @@ export function ScreensCheckout() {
       }
     };
     fetchCart();
+  }, []);
+
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      try {
+        const data = await profileService.getAddresses();
+        if (data.length > 0) {
+          const apiAddresses = data.map(toCheckoutAddress);
+          setAddresses(apiAddresses);
+          setSelectedAddress(apiAddresses.find((addr) => addr.isDefault)?.id || apiAddresses[0].id);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchAddresses();
   }, []);
 
   const shipping = SHIPPING_OPTIONS.find((s) => s.id === selectedShipping);
@@ -208,7 +247,7 @@ export function ScreensCheckout() {
       {cartItems.map((item: any) => (
         <div key={item.cart_item_id || item.id} className="flex gap-3 mb-3">
           <div className="relative">
-            <img src={item.image || item.product?.image} alt={item.name || item.product?.name} className="w-14 h-14 object-cover rounded-lg" />
+            <img src={item.image || item.product?.image || null} alt={item.name || item.product?.name} className="w-14 h-14 object-cover rounded-lg" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
             <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-[#757575] rounded-full text-white text-[10px] flex items-center justify-center font-bold">
               {item.quantity}
             </span>

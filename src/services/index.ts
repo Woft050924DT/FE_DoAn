@@ -6,6 +6,17 @@ export { authService } from './authService';
 export { productService } from './productService';
 export { cartService } from './cartService';
 export { orderService } from './orderService';
+export { profileService } from './profileService';
+export { notificationService } from './notificationService';
+export { wishlistService } from './wishlistService';
+export { couponService } from './couponService';
+export { chatService } from './chatService';
+export {
+  adminDashboardService,
+  adminAITrainingService,
+  adminChatService,
+  adminSharedService,
+} from './adminService';
 
 // Export types
 export * from './types';

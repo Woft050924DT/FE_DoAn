@@ -17,7 +17,7 @@ const transformProduct = (apiProduct: any) => ({
   sku: apiProduct.sku,
   price: apiProduct.price,
   comparePrice: apiProduct.compare_price,
-  image: apiProduct.product_images?.find((img: any) => img.is_primary)?.image_url || apiProduct.product_images?.[0]?.image_url || "",
+  image: apiProduct.product_images?.find((img: any) => img.is_primary)?.image_url || apiProduct.product_images?.[0]?.image_url || null,
   images: apiProduct.product_images?.map((img: any) => img.image_url) || [],
   rating: apiProduct.product_reviews?.length > 0 
     ? apiProduct.product_reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / apiProduct.product_reviews.length 
@@ -250,7 +250,7 @@ export function ScreensAdminProducts() {
       header: "Sản phẩm",
       render: (product: any) => (
         <div className="flex items-center gap-3">
-          <img src={product.image} alt={product.name} className="w-10 h-10 rounded-lg object-cover shrink-0" />
+          <img src={product.image || null} alt={product.name} className="w-10 h-10 rounded-lg object-cover shrink-0" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
           <div>
             <p className="font-medium text-[#212121] text-xs line-clamp-1 max-w-40">{product.name}</p>
             <p className="text-[#757575] text-[11px]">{product.sku}</p>

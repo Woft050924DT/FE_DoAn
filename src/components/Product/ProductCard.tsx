@@ -84,8 +84,9 @@ export function ProductCard({ product, onClick }: ProductCardProps) {
       {/* Image */}
       <div className="aspect-square overflow-hidden bg-gray-50">
         <img
-          src={product.image}
+          src={product.image || null}
           alt={product.name}
+          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
       </div>
