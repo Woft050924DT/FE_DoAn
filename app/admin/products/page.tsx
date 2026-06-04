@@ -74,9 +74,6 @@ export default function AdminProductsPage() {
   const [newVariant, setNewVariant] = useState({ name: "", option1_name: "Màu", option1_value: "", option2_name: "Size", option2_value: "", price: "", compare_price: "", cost_price: "", stock_quantity: "" });
   const [variantsExpanded, setVariantsExpanded] = useState(true);
 
-  // Image URL
-  const [newImageUrl, setNewImageUrl] = useState("");
-
   // Filters
   const [brands, setBrands] = useState<Brand[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -230,26 +227,6 @@ export default function AdminProductsPage() {
     setVariants(prev => prev.filter(v => v.variant_id !== variantId));
   };
 
-  const handleAddImage = async () => {
-    if (!selectedProduct || !newImageUrl) return;
-    setSaving(true);
-    try {
-      const img = await productService.uploadProductImage(selectedProduct.id, { image_url: newImageUrl });
-      setSelectedProduct((prev: any) => ({
-        ...prev,
-        raw: {
-          ...(prev.raw || {}),
-          product_images: [...((prev.raw && prev.raw.product_images) || []), img],
-        },
-      }));
-      setNewImageUrl("");
-    } catch (err) {
-      console.error("Add image failed:", err);
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const toggleSelect = (id: string) =>
     setSelectedProducts((prev) => prev.includes(id) ? prev.filter((x) => id !== x) : [...prev, id]);
   const toggleAll = () => {
@@ -400,33 +377,6 @@ export default function AdminProductsPage() {
               {drawerMode === "view" ? (
                 /* VIEW MODE */
                 <>
-                  {/* Images */}
-                  <div className="bg-white rounded-xl border border-[#E0E0E0] p-5">
-                    <h4 className="font-semibold text-[#212121] mb-3">Hình ảnh</h4>
-                    <div className="grid grid-cols-4 gap-2">
-                      {(selectedProduct?.raw?.product_images || []).map((img: any) => (
-                        <div key={img.image_id} className="relative aspect-square rounded-lg overflow-hidden border border-[#E0E0E0]">
-                          <img src={img.image_url} alt={img.alt_text || ""} className="w-full h-full object-cover" />
-                          {img.is_primary && (
-                            <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] text-center py-0.5">Ảnh chính</div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-3 flex gap-2">
-                      <input
-                        type="text"
-                        value={newImageUrl}
-                        onChange={(e) => setNewImageUrl(e.target.value)}
-                        placeholder="Dán URL ảnh..."
-                        className="flex-1 border border-[#E0E0E0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1565C0]"
-                      />
-                      <button onClick={handleAddImage} disabled={!newImageUrl || saving} className="bg-[#2563EB] text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50">
-                        Thêm ảnh
-                      </button>
-                    </div>
-                  </div>
-
                   {/* Variants */}
                   <div className="bg-white rounded-xl border border-[#E0E0E0] p-5">
                     <div className="flex items-center justify-between mb-3">
