@@ -177,10 +177,10 @@ export default function ProductDetailPage() {
         <div>
           <div className="relative aspect-square bg-gray-50 rounded-2xl overflow-hidden mb-3 border border-[#E0E0E0]">
             <img
-              src={images[selectedImage] || product.image}
+              src={(images[selectedImage] || product.image) || null}
               alt={product.name}
               className="w-full h-full object-cover cursor-zoom-in"
-            />
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             {product.badge && (
               <div className="absolute top-3 left-3 bg-[#E53935] text-white text-xs font-bold px-2.5 py-1 rounded-full">
                 -{product.discount}%
@@ -212,7 +212,7 @@ export default function ProductDetailPage() {
                   selectedImage === i ? "border-[#1565C0] ring-2 ring-[#1565C0]/20" : "border-[#E0E0E0]"
                 }`}
               >
-                <img src={img} alt="" className="w-full h-full object-cover" />
+                <img src={img || null} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
               </button>
             ))}
           </div>

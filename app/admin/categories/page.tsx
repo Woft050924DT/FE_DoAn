@@ -1,35 +1,10 @@
 'use client'
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus, Edit2, Trash2, Search, FolderTree, ChevronRight, MoreHorizontal, ChevronDown } from "lucide-react";
 import { UIPageHeader } from "@/components/UI/PageHeader";
 import { TableDataTable } from "@/components/Table/DataTable";
-
-interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  parent?: string;
-  parentId?: string;
-  productCount: number;
-  status: "active" | "inactive";
-  order: number;
-}
-
-const MOCK_CATEGORIES: Category[] = [
-  { id: "1", name: "Điện thoại", slug: "dien-thoai", productCount: 124, status: "active", order: 1 },
-  { id: "2", name: "Laptop", slug: "laptop", productCount: 89, status: "active", order: 2 },
-  { id: "3", name: "Tablet", slug: "tablet", productCount: 45, status: "active", order: 3 },
-  { id: "4", name: "Phụ kiện", slug: "phu-kien", productCount: 312, status: "active", order: 4 },
-  { id: "5", name: "Đồng hồ thông minh", slug: "dong-ho-thong-minh", productCount: 67, status: "active", order: 5 },
-  { id: "6", name: "Máy ảnh", slug: "may-anh", productCount: 23, status: "inactive", order: 6 },
-  { id: "7", name: "Tai nghe", slug: "tai-nghe", productCount: 156, status: "active", order: 7 },
-  { id: "8", name: "Loa bluetooth", slug: "loa-bluetooth", productCount: 78, status: "active", order: 8 },
-  { id: "9", name: "Sạc dự phòng", slug: "sac-du-phong", productCount: 201, status: "active", order: 9 },
-  { id: "10", name: "Cáp sạc", slug: "cap-sac", productCount: 334, status: "active", order: 10 },
-  { id: "11", name: "Camera hành trình", slug: "camera-hanh-trinh", productCount: 34, status: "inactive", order: 11 },
-  { id: "12", name: "Máy chơi game", slug: "may-choi-game", productCount: 56, status: "active", order: 12 },
-];
+import { adminCategoryService, Category } from "@/services/adminService";
 
 const StatusBadge = ({ status }: { status: "active" | "inactive" }) => (
   <span className={`px-2 py-0.5 rounded text-xs font-medium ${status === "active" ? "bg-green-100 text-[#2E7D32]" : "bg-gray-100 text-[#757575]"}`}>
@@ -43,19 +18,36 @@ export default function AdminCategoriesPage() {
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState<Category | null>(null);
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: "", slug: "", parentId: "", status: "active" as "active" | "inactive" });
+  const [submitting, setSubmitting] = useState(false);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  const filtered = MOCK_CATEGORIES.filter(
-    (c) =>
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.slug.toLowerCase().includes(search.toLowerCase())
-  );
+  const fetchCategories = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await adminCategoryService.getList({ search, page, limit: 50 });
+      setCategories(Array.isArray(res.data) ? res.data : []);
+      setTotal(res.pagination?.total ?? 0);
+    } catch (err: any) {
+      setError(err?.response?.status === 404 ? "API chưa được implement." : "Không thể tải dữ liệu.");
+    } finally {
+      setLoading(false);
+    }
+  }, [search, page]);
+
+  useEffect(() => { fetchCategories(); }, [fetchCategories]);
 
   const toggleSelect = (id: string) =>
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   const toggleAll = () => {
-    if (selected.length === filtered.length) setSelected([]);
-    else setSelected(filtered.map((c) => c.id));
+    if (selected.length === categories.length) setSelected([]);
+    else setSelected(categories.map((c) => c.category_id));
   };
 
   const openAdd = () => {
@@ -65,8 +57,39 @@ export default function AdminCategoriesPage() {
   };
   const openEdit = (item: Category) => {
     setEditItem(item);
-    setFormData({ name: item.name, slug: item.slug, parentId: item.parentId || "", status: item.status });
+    setFormData({ name: item.name, slug: item.slug, parentId: item.parent_id || "", status: item.status });
     setShowForm(true);
+  };
+
+  const handleSave = async () => {
+    if (!formData.name) return;
+    setSubmitting(true);
+    try {
+      if (editItem) {
+        await adminCategoryService.update(editItem.category_id, { name: formData.name, slug: formData.slug, parent_id: formData.parentId || null, status: formData.status });
+      } else {
+        await adminCategoryService.create({ name: formData.name, slug: formData.slug, parent_id: formData.parentId || null, status: formData.status });
+      }
+      setShowForm(false);
+      fetchCategories();
+    } catch (err) {
+      console.error("Save category failed:", err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (categoryId: string) => {
+    if (!confirm("Bạn có chắc muốn xóa danh mục này?")) return;
+    try {
+      setActionLoading(categoryId);
+      await adminCategoryService.delete(categoryId);
+      fetchCategories();
+    } catch (err) {
+      console.error("Delete category failed:", err);
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const columns = [
@@ -83,7 +106,7 @@ export default function AdminCategoriesPage() {
         </div>
       ),
     },
-    { key: "productCount", header: "Sản phẩm", render: (c: Category) => <span className="text-[#757575] text-xs font-medium">{c.productCount}</span> },
+    { key: "productCount", header: "Sản phẩm", render: (c: Category) => <span className="text-[#757575] text-xs font-medium">{c.product_count}</span> },
     { key: "status", header: "Trạng thái", render: (c: Category) => <StatusBadge status={c.status} /> },
     {
       key: "order",
@@ -91,7 +114,7 @@ export default function AdminCategoriesPage() {
       render: (c: Category) => (
         <div className="flex items-center gap-1">
           <button className="p-1 hover:bg-gray-100 rounded"><ChevronDown size={12} className="text-[#757575]" /></button>
-          <span className="text-xs font-medium w-5 text-center">{c.order}</span>
+          <span className="text-xs font-medium w-5 text-center">{c.sort_order}</span>
           <button className="p-1 hover:bg-gray-100 rounded"><ChevronRight size={12} className="text-[#757575]" /></button>
         </div>
       ),
@@ -134,8 +157,8 @@ export default function AdminCategoriesPage() {
                 className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0] bg-white"
               >
                 <option value="">Không có (Danh mục gốc)</option>
-                {MOCK_CATEGORIES.filter((c) => c.id !== editItem?.id).map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+                {categories.filter((c) => c.category_id !== editItem?.category_id).map((c) => (
+                  <option key={c.category_id} value={c.category_id}>{c.name}</option>
                 ))}
               </select>
             </div>
@@ -160,8 +183,12 @@ export default function AdminCategoriesPage() {
           </div>
           <div className="flex gap-3 mt-6 pt-4 border-t border-[#E0E0E0]">
             <button onClick={() => setShowForm(false)} className="flex-1 border border-[#E0E0E0] py-2.5 rounded-lg text-sm hover:bg-gray-50">Hủy</button>
-            <button className="flex-1 bg-[#2563EB] text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700">
-              {editItem ? "Lưu thay đổi" : "Tạo danh mục"}
+            <button
+              onClick={handleSave}
+              disabled={submitting || !formData.name}
+              className="flex-1 bg-[#2563EB] text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+            >
+              {submitting ? "Đang lưu..." : editItem ? "Lưu thay đổi" : "Tạo danh mục"}
             </button>
           </div>
         </div>
@@ -173,37 +200,48 @@ export default function AdminCategoriesPage() {
     <div className="p-6 space-y-5">
       <UIPageHeader
         title="Quản lý danh mục"
-        subtitle={`Tổng ${MOCK_CATEGORIES.length} danh mục`}
+        subtitle={`Tổng ${total} danh mục`}
         actions={
           <button onClick={openAdd} className="flex items-center gap-2 bg-[#2563EB] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
             <Plus size={14} /> Thêm danh mục
           </button>
         }
       />
+      {error && (
+        <div className="mx-4 mt-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+          {error}
+        </div>
+      )}
       <div className="bg-white rounded-xl border border-[#E0E0E0]">
         <div className="px-4 py-3 border-b border-[#E0E0E0]">
           <div className="relative">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               placeholder="Tìm kiếm danh mục..."
               className="pl-8 pr-4 py-2 border border-[#E0E0E0] rounded-lg text-sm w-72 focus:outline-none focus:border-[#1565C0]"
             />
           </div>
         </div>
         <TableDataTable
-          data={filtered}
+          data={categories}
           columns={columns}
           selectedIds={selected}
           onToggleSelect={toggleSelect}
           onToggleAll={toggleAll}
-          idKey="id"
+          idKey="category_id"
           onRowHover={setHoveredRow}
           renderRowActions={(c: Category) => (
-            <div className={`flex items-center gap-1 transition-opacity ${hoveredRow === c.id ? "opacity-100" : "opacity-0"}`}>
+            <div className={`flex items-center gap-1 transition-opacity ${hoveredRow === c.category_id ? "opacity-100" : "opacity-0"}`}>
               <button onClick={() => openEdit(c)} className="p-1.5 rounded-lg hover:bg-gray-100 text-[#757575]"><Edit2 size={13} /></button>
-              <button className="p-1.5 rounded-lg hover:bg-red-50 text-[#E53935]"><Trash2 size={13} /></button>
+              <button
+                onClick={() => handleDelete(c.category_id)}
+                disabled={actionLoading === c.category_id}
+                className="p-1.5 rounded-lg hover:bg-red-50 text-[#E53935] disabled:opacity-50"
+              >
+                {actionLoading === c.category_id ? "..." : <Trash2 size={13} />}
+              </button>
             </div>
           )}
         />

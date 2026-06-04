@@ -16,6 +16,22 @@ export {
   adminAITrainingService,
   adminChatService,
   adminSharedService,
+  adminCustomerService,
+  adminCouponService,
+  adminReviewService,
+  adminPostService,
+  adminBannerService,
+  adminCategoryService,
+  adminBrandService,
+  adminStaffService,
+  adminMediaService,
+  adminAILogService,
+  adminQuickReplyService,
+  adminPaymentService,
+  adminShippingService,
+  adminSettingsService,
+  adminPaymentsService,
+  adminTrainingDataService,
 } from './adminService';
 
 // Export types

@@ -215,7 +215,7 @@ export function ScreensProductDetail() {
                   selectedImage === i ? "border-[#1565C0] ring-2 ring-[#1565C0]/20" : "border-[#E0E0E0]"
                 }`}
               >
-                <img src={img} alt="" className="w-full h-full object-cover" />
+                <img src={img || null} alt="" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
               </button>
             ))}
           </div>

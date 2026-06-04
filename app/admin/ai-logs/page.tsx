@@ -1,36 +1,10 @@
 'use client'
 
-import { useState } from "react";
-import { Search, Bot, ArrowDown, ArrowUp, ChevronRight, Download, Filter, MessageSquare } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Search, Bot, ArrowDown, ArrowUp, Download } from "lucide-react";
 import { UIPageHeader } from "@/components/UI/PageHeader";
 import { TableDataTable } from "@/components/Table/DataTable";
-
-interface AILog {
-  id: string;
-  sessionId: string;
-  userId: string;
-  userName: string;
-  userEmail: string;
-  question: string;
-  reply: string;
-  intent: string;
-  confidence: number;
-  wasHelpful: boolean | null;
-  handedOff: boolean;
-  createdAt: string;
-  duration: number;
-}
-
-const MOCK_LOGS: AILog[] = [
-  { id: "1", sessionId: "sess-001", userId: "u1", userName: "Nguyễn Văn A", userEmail: "nvana@email.com", question: "Cho tôi hỏi iPhone 15 Pro có mấy màu?", reply: "iPhone 15 Pro có 4 màu: Titan tự nhiên, Titan xanh dương, Titan trắng, Titan đen. Bạn quan tâm màu nào nhất?", intent: "product_inquiry", confidence: 0.96, wasHelpful: true, handedOff: false, createdAt: "20/01/2024 14:32", duration: 2 },
-  { id: "2", sessionId: "sess-002", userId: "u2", userName: "Trần Thị B", userEmail: "ttb@email.com", question: "Tôi muốn đổi sang Samsung Galaxy S24", reply: "Để đổi sản phẩm, bạn vui lòng liên hệ bộ phận chăm sóc khách hàng qua hotline 1900-xxxx...", intent: "order_inquiry", confidence: 0.91, wasHelpful: null, handedOff: true, createdAt: "20/01/2024 14:18", duration: 5 },
-  { id: "3", sessionId: "sess-003", userId: "u3", userName: "Lê Minh C", userEmail: "lmc@email.com", question: "Chính sách đổi trả như thế nào?", reply: "VietShop cho phép đổi trả trong vòng 7 ngày nếu sản phẩm còn nguyên seal, bao bì. Điều kiện chi tiết...", intent: "return_policy", confidence: 0.99, wasHelpful: true, handedOff: false, createdAt: "20/01/2024 13:45", duration: 1 },
-  { id: "4", sessionId: "sess-004", userId: "", userName: "Khách vãng lai", userEmail: "", question: "Có giao hàng vào Chủ nhật không?", reply: "Dạ VietShop có hỗ trợ giao hàng 7/7 kể cả Chủ nhật. Tuy nhiên phí giao hàng Chủ nhật sẽ cao hơn...", intent: "shipping_inquiry", confidence: 0.94, wasHelpful: false, handedOff: false, createdAt: "20/01/2024 12:20", duration: 3 },
-  { id: "5", sessionId: "sess-005", userId: "u4", userName: "Phạm Thu D", userEmail: "ptd@email.com", question: "Hướng dẫn tôi cách đặt hàng trên website", reply: "Để đặt hàng, bạn chọn sản phẩm -> Thêm vào giỏ -> Điền thông tin giao hàng -> Chọn thanh toán...", intent: "how_to_order", confidence: 0.97, wasHelpful: true, handedOff: false, createdAt: "20/01/2024 11:55", duration: 1 },
-  { id: "6", sessionId: "sess-006", userId: "", userName: "Khách vãng lai", userEmail: "", question: "MacBook Air M3 giá bao nhiêu?", reply: "MacBook Air M3 hiện có giá từ 28.9 triệu VNĐ. Bạn muốn xem thông tin chi tiết về cấu hình nào?", intent: "product_inquiry", confidence: 0.88, wasHelpful: null, handedOff: false, createdAt: "20/01/2024 10:30", duration: 2 },
-  { id: "7", sessionId: "sess-007", userId: "u5", userName: "Hoàng Văn E", userEmail: "hve@email.com", question: "Tôi chưa nhận được đơn hàng đã đặt 3 ngày trước", reply: "", intent: "order_inquiry", confidence: 0.72, wasHelpful: null, handedOff: true, createdAt: "19/01/2024 16:42", duration: 0 },
-  { id: "8", sessionId: "sess-008", userId: "u6", userName: "Vũ Thị F", userEmail: "vtf@email.com", question: "Mã giảm giá NEWUSER có còn không?", reply: "Dạ mã NEWUSER vẫn còn hiệu lực. Bạn sẽ được giảm 50K cho đơn hàng đầu tiên. Áp dụng tại bước thanh toán.", intent: "coupon_inquiry", confidence: 0.98, wasHelpful: true, handedOff: false, createdAt: "19/01/2024 15:10", duration: 1 },
-];
+import { adminAILogService, AILog } from "@/services/adminService";
 
 const TABS = ["Tất cả", "Hữu ích", "Không hữu ích", "Chuyển nhân viên", "Độ confidence thấp"];
 
@@ -63,22 +37,72 @@ export default function AdminAILogsPage() {
   const [selected, setSelected] = useState<string[]>([]);
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
   const [expandedLog, setExpandedLog] = useState<string | null>(null);
+  const [logs, setLogs] = useState<AILog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+  const [lowConfCount, setLowConfCount] = useState(0);
+  const [page, setPage] = useState(1);
+  const LIMIT = 20;
 
-  const filtered = MOCK_LOGS.filter((log) => {
-    const matchSearch = log.question.toLowerCase().includes(search.toLowerCase()) || log.userName.toLowerCase().includes(search.toLowerCase()) || log.reply.toLowerCase().includes(search.toLowerCase());
-    if (activeTab === 0) return matchSearch;
-    if (activeTab === 1) return matchSearch && log.wasHelpful === true;
-    if (activeTab === 2) return matchSearch && log.wasHelpful === false;
-    if (activeTab === 3) return matchSearch && log.handedOff;
-    if (activeTab === 4) return matchSearch && log.confidence < 0.8;
-    return matchSearch;
-  });
+  const handleExport = async () => {
+    try {
+      const data = await adminAILogService.export();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "ai-logs.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Export failed:", err);
+    }
+  };
+
+  const fetchLogs = useCallback(async () => {
+    setLoading(true);
+    try {
+      let helpfulParam: boolean | undefined;
+      let handedOffParam: boolean | undefined;
+      let lowConfParam: boolean | undefined;
+      if (activeTab === 1) helpfulParam = true;
+      if (activeTab === 2) helpfulParam = false;
+      if (activeTab === 3) handedOffParam = true;
+      if (activeTab === 4) lowConfParam = true;
+      const res = await adminAILogService.getList({
+        search,
+        helpful: helpfulParam,
+        handed_off: handedOffParam,
+        low_confidence: lowConfParam,
+        page,
+        limit: LIMIT,
+      });
+      setLogs(Array.isArray(res.data) ? res.data : []);
+      setTotal(res.pagination?.total ?? 0);
+    } catch (err) {
+      console.error("Failed to fetch AI logs:", err);
+      setLogs([]);
+      setTotal(0);
+    } finally {
+      setLoading(false);
+    }
+  }, [search, activeTab, page]);
+
+  useEffect(() => {
+    fetchLogs();
+  }, [fetchLogs]);
+
+  useEffect(() => {
+    adminAILogService.getList({ low_confidence: true, limit: 1 })
+      .then(res => setLowConfCount(res.pagination?.total ?? 0))
+      .catch(() => {});
+  }, [activeTab]);
 
   const toggleSelect = (id: string) =>
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   const toggleAll = () => {
-    if (selected.length === filtered.length) setSelected([]);
-    else setSelected(filtered.map((l) => l.id));
+    if (selected.length === logs.length) setSelected([]);
+    else setSelected(logs.map((l) => l.id));
   };
 
   const columns = [
@@ -107,29 +131,29 @@ export default function AdminAILogsPage() {
       header: "Người dùng",
       render: (log: AILog) => (
         <div>
-          <p className="text-xs font-medium text-[#212121]">{log.userName}</p>
-          {log.userEmail && <p className="text-[10px] text-[#757575]">{log.userEmail}</p>}
+          <p className="text-xs font-medium text-[#212121]">{log.user_name}</p>
+          {log.user_email && <p className="text-[10px] text-[#757575]">{log.user_email}</p>}
         </div>
       ),
     },
     {
       key: "handoff",
       header: "Chuyển",
-      render: (log: AILog) => log.handedOff ? (
+      render: (log: AILog) => log.handed_off ? (
         <span className="text-xs bg-amber-100 text-[#E65100] px-2 py-0.5 rounded font-medium">Có</span>
       ) : <span className="text-xs text-[#9E9E9E]">—</span>,
     },
-    { key: "date", header: "Thời gian", render: (log: AILog) => <span className="text-[#757575] text-xs">{log.createdAt}</span> },
+    { key: "date", header: "Thời gian", render: (log: AILog) => <span className="text-[#757575] text-xs">{log.created_at}</span> },
   ];
 
   return (
     <div className="p-6 space-y-5">
       <UIPageHeader
         title="AI Chat Logs"
-        subtitle={`${MOCK_LOGS.length} cuộc hội thoại • ${MOCK_LOGS.filter((l) => l.confidence < 0.8).length} confidence thấp`}
+        subtitle={`${total} cuộc hội thoại • ${lowConfCount} confidence thấp`}
         actions={
           <>
-            <button className="flex items-center gap-2 border border-[#E0E0E0] bg-white px-3 py-2 rounded-lg text-sm hover:bg-gray-50">
+            <button onClick={handleExport} className="flex items-center gap-2 border border-[#E0E0E0] bg-white px-3 py-2 rounded-lg text-sm hover:bg-gray-50">
               <Download size={14} /> Export
             </button>
           </>
@@ -140,17 +164,17 @@ export default function AdminAILogsPage() {
           <div className="flex items-center gap-3 flex-wrap">
             <div className="relative flex-1 min-w-48">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm câu hỏi, phản hồi..." className="pl-8 pr-4 py-2 border border-[#E0E0E0] rounded-lg text-sm w-full focus:outline-none focus:border-[#1565C0]" />
+              <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Tìm câu hỏi, phản hồi..." className="pl-8 pr-4 py-2 border border-[#E0E0E0] rounded-lg text-sm w-full focus:outline-none focus:border-[#1565C0]" />
             </div>
             <div className="flex gap-1">
               {TABS.map((tab, i) => (
-                <button key={tab} onClick={() => setActiveTab(i)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${activeTab === i ? "bg-[#1565C0] text-white" : "text-[#757575] hover:bg-gray-100"}`}>{tab}</button>
+                <button key={tab} onClick={() => { setActiveTab(i); setPage(1); }} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${activeTab === i ? "bg-[#1565C0] text-white" : "text-[#757575] hover:bg-gray-100"}`}>{tab}</button>
               ))}
             </div>
           </div>
         </div>
         <TableDataTable
-          data={filtered}
+          data={logs}
           columns={columns}
           selectedIds={selected}
           onToggleSelect={toggleSelect}
@@ -162,7 +186,7 @@ export default function AdminAILogsPage() {
               <button onClick={() => setExpandedLog(expandedLog === log.id ? null : log.id)} className="p-1.5 rounded-lg hover:bg-gray-100 text-[#757575]">
                 {expandedLog === log.id ? <ArrowUp size={13} /> : <ArrowDown size={13} />}
               </button>
-              {log.handedOff && <Bot size={13} className="text-amber-500" />}
+              {log.handed_off && <Bot size={13} className="text-amber-500" />}
             </div>
           )}
         />

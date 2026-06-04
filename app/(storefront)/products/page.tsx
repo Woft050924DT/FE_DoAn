@@ -320,7 +320,7 @@ export default function ProductListPage() {
                   <ProductCard key={product.id} product={product} onClick={() => router.push(`/products/${product.id}`)} />
                 ) : (
                   <div key={product.id} className="bg-white rounded-xl border border-[#E0E0E0] p-4 flex gap-4 hover:shadow-md transition-shadow cursor-pointer" onClick={() => router.push(`/products/${product.id}`)}>
-                    <img src={product.image} alt={product.name} className="w-24 h-24 object-cover rounded-lg" />
+                    {product.image && <img src={product.image} alt={product.name} className="w-24 h-24 object-cover rounded-lg" />}
                     <div className="flex-1">
                       <p className="text-xs text-[#757575]">{product.brand}</p>
                       <p className="font-medium text-[#212121] mt-0.5 line-clamp-2">{product.name}</p>

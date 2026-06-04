@@ -169,6 +169,14 @@ export const productService = {
   },
 
   /**
+   * Get all products for admin (with full admin list)
+   */
+  async getAdminProducts(params?: ProductListParams & { status?: string; brand_id?: string; category_id?: string }): Promise<ProductListResponse> {
+    const response = await apiClient.get<ProductListResponse>('/api/admin/products', { params });
+    return response.data;
+  },
+
+  /**
    * Upload product image (admin)
    */
   async uploadProductImage(

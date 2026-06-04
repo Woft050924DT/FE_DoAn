@@ -68,9 +68,9 @@ export default function StorefrontLayout({
 
           {/* Actions */}
           <div className="flex items-center gap-2 shrink-0">
-            <button className="relative p-2 hover:bg-gray-100 rounded-full">
+            <div className="relative p-2 hover:bg-gray-100 rounded-full">
               <NotificationBell />
-            </button>
+            </div>
             <button
               className="relative p-2 hover:bg-gray-100 rounded-full"
               onClick={() => router.push("/cart")}

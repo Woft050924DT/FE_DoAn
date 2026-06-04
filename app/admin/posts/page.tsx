@@ -1,36 +1,13 @@
 'use client'
 
-import { useState } from "react";
-import { Plus, Edit2, Trash2, Search, FileText, Eye, EyeOff } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Plus, Edit2, Trash2, Search, FileText, Eye } from "lucide-react";
 import { UIPageHeader } from "@/components/UI/PageHeader";
 import { TableDataTable } from "@/components/Table/DataTable";
-
-interface Post {
-  id: string;
-  title: string;
-  slug: string;
-  excerpt: string;
-  category: string;
-  author: string;
-  authorAvatar: string;
-  thumbnail: string;
-  status: "published" | "draft" | "scheduled";
-  publishedAt: string;
-  views: number;
-}
-
-const MOCK_POSTS: Post[] = [
-  { id: "1", title: "Top 10 điện thoại tốt nhất 2024 nên mua ngay", slug: "top-10-dien-thoai-tot-nhat-2024", excerpt: "Danh sách các dòng điện thoại được đánh giá cao nhất năm 2024, từ iPhone 15 đến Samsung Galaxy S24...", category: "Đánh giá", author: "Minh Tuấn", authorAvatar: "MT", thumbnail: "", status: "published", publishedAt: "20/01/2024", views: 4521 },
-  { id: "2", title: "Hướng dẫn chọn laptop phù hợp cho sinh viên 2024", slug: "huong-dan-chon-laptop-sinh-vien-2024", excerpt: "Sinh viên cần laptop để học tập, làm bài tập và giải trí. Bài viết này giúp bạn chọn được chiếc laptop phù hợp...", category: "Hướng dẫn", author: "Thu Hà", authorAvatar: "TH", thumbnail: "", status: "published", publishedAt: "18/01/2024", views: 3210 },
-  { id: "3", title: "So sánh iPhone 15 Pro Max vs Samsung S24 Ultra", slug: "so-sanh-iphone-15-pro-max-vs-samsung-s24-ultra", excerpt: "Hai flagship đắt nhất của Apple và Samsung, đâu mới là lựa chọn tốt hơn trong năm 2024?", category: "So sánh", author: "Minh Tuấn", authorAvatar: "MT", thumbnail: "", status: "published", publishedAt: "15/01/2024", views: 8934 },
-  { id: "4", title: "Cách bảo quản và sạc pin đúng cách cho smartphone", slug: "cach-bao-quan-sac-pin-dung-cach", excerpt: "Sạc pin đúng cách giúp kéo dài tuổi thọ pin. Nhiều người vẫn mắc những sai lầm phổ biến khi sạc pin...", category: "Mẹo hay", author: "Lan Anh", authorAvatar: "LA", thumbnail: "", status: "draft", publishedAt: "", views: 0 },
-  { id: "5", title: "Review chi tiết MacBook Air M3 - Laptop mỏng nhẹ đáng mua", slug: "review-macbook-air-m3", excerpt: "MacBook Air M3 với chip M3 thế hệ mới, hiệu năng vượt trội, pin 18 giờ. Đánh giá chi tiết từng khía cạnh.", category: "Đánh giá", author: "Minh Tuấn", authorAvatar: "MT", thumbnail: "", status: "scheduled", publishedAt: "25/01/2024", views: 0 },
-  { id: "6", title: "Tai nghe không dây nào tốt nhất dưới 3 triệu?", slug: "tai-nghe-khong-day-tot-nhat-duoi-3-trieu", excerpt: "Với ngân sách 3 triệu, bạn có thể sở hữu những chiếc tai nghe không dây với chất lượng âm thanh tuyệt vời...", category: "Đánh giá", author: "Thu Hà", authorAvatar: "TH", thumbnail: "", status: "published", publishedAt: "10/01/2024", views: 2156 },
-  { id: "7", title: "Cách reset iPhone khi bị treo logo đơn giản nhất", slug: "cach-reset-iphone-khi-bi-treo-logo", excerpt: "iPhone bị treo ở màn hình logo là lỗi phổ biến. Hướng dẫn chi tiết cách reset iPhone nhanh chóng...", category: "Hướng dẫn", author: "Lan Anh", authorAvatar: "LA", thumbnail: "", status: "published", publishedAt: "05/01/2024", views: 6789 },
-  { id: "8", title: "5 sai lầm phổ biến khi mua laptop mới", slug: "5-sai-lam-pho-bien-khi-mua-laptop", excerpt: "Nhiều người mắc sai lầm khi mua laptop vì không hiểu rõ nhu cầu và các thông số kỹ thuật...", category: "Mẹo hay", author: "Minh Tuấn", authorAvatar: "MT", thumbnail: "", status: "draft", publishedAt: "", views: 0 },
-];
+import { adminPostService, Post } from "@/services/adminService";
 
 const TABS = ["Tất cả", "Đã xuất bản", "Nháp", "Đã lên lịch"];
+const STATUS_MAP = ["published", "draft", "scheduled"];
 
 const StatusBadge = ({ status }: { status: Post["status"] }) => {
   const map: Record<string, { label: string; cls: string }> = {
@@ -42,23 +19,52 @@ const StatusBadge = ({ status }: { status: Post["status"] }) => {
   return <span className={`px-2 py-0.5 rounded text-xs font-medium ${s.cls}`}>{s.label}</span>;
 };
 
+const formatViews = (n: number) => n > 0 ? n.toLocaleString("vi-VN") : "—";
+
 export default function AdminPostsPage() {
   const [activeTab, setActiveTab] = useState(0);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  const filtered = MOCK_POSTS.filter((p) => {
-    const matchSearch = p.title.toLowerCase().includes(search.toLowerCase()) || p.excerpt.toLowerCase().includes(search.toLowerCase());
-    if (activeTab === 0) return matchSearch;
-    return matchSearch && p.status === ["published", "draft", "scheduled"][activeTab - 1];
-  });
+  const fetchPosts = useCallback(async () => {
+    setLoading(true);
+    try {
+      const statusParam = activeTab === 0 ? undefined : STATUS_MAP[activeTab - 1];
+      const res = await adminPostService.getList({ search, status: statusParam });
+      setPosts(Array.isArray(res.data) ? res.data : []);
+      setTotal(res.pagination?.total ?? 0);
+    } catch (err) {
+      console.error("Failed to fetch posts:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [search, activeTab]);
+
+  useEffect(() => { fetchPosts(); }, [fetchPosts]);
+
+  const handleDelete = async (postId: string) => {
+    if (!confirm("Bạn có chắc muốn xóa bài viết này?")) return;
+    try {
+      setActionLoading(postId);
+      await adminPostService.delete(postId);
+      fetchPosts();
+    } catch (err) {
+      console.error("Delete post failed:", err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   const toggleSelect = (id: string) =>
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   const toggleAll = () => {
-    if (selected.length === filtered.length) setSelected([]);
-    else setSelected(filtered.map((p) => p.id));
+    if (selected.length === posts.length) setSelected([]);
+    else setSelected(posts.map((p) => p.post_id));
   };
 
   const columns = [
@@ -83,25 +89,25 @@ export default function AdminPostsPage() {
       header: "Tác giả",
       render: (p: Post) => (
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 bg-[#1565C0] rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0">{p.authorAvatar}</div>
-          <span className="text-xs text-[#757575]">{p.author}</span>
+          <div className="w-6 h-6 bg-[#1565C0] rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0">{p.author_avatar}</div>
+          <span className="text-xs text-[#757575]">{p.author_name}</span>
         </div>
       ),
     },
     {
       key: "views",
       header: "Lượt xem",
-      render: (p: Post) => <span className="text-[#757575] text-xs">{p.views > 0 ? p.views.toLocaleString("vi-VN") : "—"}</span>,
+      render: (p: Post) => <span className="text-[#757575] text-xs">{formatViews(p.views)}</span>,
     },
     { key: "status", header: "Trạng thái", render: (p: Post) => <StatusBadge status={p.status} /> },
-    { key: "date", header: "Ngày", render: (p: Post) => <span className="text-[#757575] text-xs">{p.publishedAt || "—"}</span> },
+    { key: "date", header: "Ngày", render: (p: Post) => <span className="text-[#757575] text-xs">{p.published_at || "—"}</span> },
   ];
 
   return (
     <div className="p-6 space-y-5">
       <UIPageHeader
         title="Quản lý bài viết"
-        subtitle={`${MOCK_POSTS.length} bài viết`}
+        subtitle={`${total} bài viết`}
         actions={
           <button className="flex items-center gap-2 bg-[#2563EB] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
             <Plus size={14} /> Viết bài mới
@@ -121,18 +127,24 @@ export default function AdminPostsPage() {
           </div>
         </div>
         <TableDataTable
-          data={filtered}
+          data={posts}
           columns={columns}
           selectedIds={selected}
           onToggleSelect={toggleSelect}
           onToggleAll={toggleAll}
-          idKey="id"
+          idKey="post_id"
           onRowHover={setHoveredRow}
           renderRowActions={(p: Post) => (
-            <div className={`flex items-center gap-1 transition-opacity ${hoveredRow === p.id ? "opacity-100" : "opacity-0"}`}>
+            <div className={`flex items-center gap-1 transition-opacity ${hoveredRow === p.post_id ? "opacity-100" : "opacity-0"}`}>
               <button className="p-1.5 rounded-lg hover:bg-gray-100 text-[#757575]"><Eye size={13} /></button>
               <button className="p-1.5 rounded-lg hover:bg-gray-100 text-[#757575]"><Edit2 size={13} /></button>
-              <button className="p-1.5 rounded-lg hover:bg-red-50 text-[#E53935]"><Trash2 size={13} /></button>
+              <button
+                onClick={() => handleDelete(p.post_id)}
+                disabled={actionLoading === p.post_id}
+                className="p-1.5 rounded-lg hover:bg-red-50 text-[#E53935] disabled:opacity-50"
+              >
+                {actionLoading === p.post_id ? "..." : <Trash2 size={13} />}
+              </button>
             </div>
           )}
         />

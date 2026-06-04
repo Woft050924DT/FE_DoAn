@@ -48,8 +48,8 @@ export function NotificationProvider({
       ]);
       setNotifications(notifRes.notifications);
       setUnreadCount(countRes.count);
-    } catch (err) {
-      console.error("[NotificationContext] fetch error:", err);
+    } catch {
+      // silent fail — notifications are non-critical
     } finally {
       setIsLoading(false);
     }
@@ -70,8 +70,8 @@ export function NotificationProvider({
         )
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
-    } catch (err) {
-      console.error("[NotificationContext] markAsRead error:", err);
+    } catch {
+      // silent fail
     }
   };
 
@@ -80,8 +80,8 @@ export function NotificationProvider({
       await notificationService.markAllAsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
       setUnreadCount(0);
-    } catch (err) {
-      console.error("[NotificationContext] markAllAsRead error:", err);
+    } catch {
+      // silent fail
     }
   };
 

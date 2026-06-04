@@ -1,34 +1,10 @@
 'use client'
 
-import { useState } from "react";
-import { Plus, Edit2, Trash2, Search, Percent, Copy, Eye, ToggleLeft, ToggleRight } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Plus, Edit2, Trash2, Search, Percent, Copy, Eye } from "lucide-react";
 import { UIPageHeader } from "@/components/UI/PageHeader";
 import { TableDataTable } from "@/components/Table/DataTable";
-
-interface Coupon {
-  id: string;
-  code: string;
-  title: string;
-  discountType: "percentage" | "fixed";
-  discountValue: number;
-  minOrder: number;
-  maxDiscount: number;
-  usageLimit: number;
-  usedCount: number;
-  startDate: string;
-  endDate: string;
-  status: "active" | "scheduled" | "expired" | "disabled";
-  isFeatured: boolean;
-}
-
-const MOCK_COUPONS: Coupon[] = [
-  { id: "1", code: "SUMMER2024", title: "Khuyến mãi mùa hè 2024", discountType: "percentage", discountValue: 15, minOrder: 500000, maxDiscount: 200000, usageLimit: 1000, usedCount: 423, startDate: "01/06/2024", endDate: "31/08/2024", status: "active", isFeatured: true },
-  { id: "2", code: "NEWUSER", title: "Giảm 50K cho đơn hàng đầu tiên", discountType: "fixed", discountValue: 50000, minOrder: 200000, maxDiscount: 0, usageLimit: 5000, usedCount: 1823, startDate: "01/01/2024", endDate: "31/12/2024", status: "active", isFeatured: true },
-  { id: "3", code: "FREESHIP", title: "Miễn phí vận chuyển", discountType: "fixed", discountValue: 0, minOrder: 300000, maxDiscount: 0, usageLimit: 9999, usedCount: 5421, startDate: "01/01/2024", endDate: "31/12/2024", status: "active", isFeatured: false },
-  { id: "4", code: "TECH20", title: "Giảm 20% cho sản phẩm công nghệ", discountType: "percentage", discountValue: 20, minOrder: 1000000, maxDiscount: 500000, usageLimit: 500, usedCount: 234, startDate: "15/01/2024", endDate: "15/02/2024", status: "expired", isFeatured: false },
-  { id: "5", code: "WEEKEND50", title: "Cuối tuần giảm 50K", discountType: "fixed", discountValue: 50000, minOrder: 0, maxDiscount: 0, usageLimit: 200, usedCount: 87, startDate: "01/02/2024", endDate: "28/02/2024", status: "scheduled", isFeatured: false },
-  { id: "6", code: "FLASH30", title: "Flash sale 30%", discountType: "percentage", discountValue: 30, minOrder: 0, maxDiscount: 150000, usageLimit: 100, usedCount: 100, startDate: "20/01/2024", endDate: "21/01/2024", status: "expired", isFeatured: false },
-];
+import { adminCouponService, Coupon } from "@/services/adminService";
 
 const formatCurrency = (n: number) => n > 0 ? new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(n) : "0đ";
 
@@ -44,6 +20,7 @@ const StatusBadge = ({ status }: { status: Coupon["status"] }) => {
 };
 
 const TABS = ["Tất cả", "Hoạt động", "Sắp diễn ra", "Hết hạn", "Tắt"];
+const STATUS_MAP = ["active", "scheduled", "expired", "disabled"];
 
 export default function AdminCouponsPage() {
   const [activeTab, setActiveTab] = useState(0);
@@ -51,22 +28,91 @@ export default function AdminCouponsPage() {
   const [selected, setSelected] = useState<string[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [error, setError] = useState<string | null>(null);
+  const LIMIT = 20;
   const [formData, setFormData] = useState({
     code: "", title: "", discountType: "percentage" as "percentage" | "fixed",
     discountValue: 10, minOrder: 0, maxDiscount: 0, usageLimit: 100, startDate: "", endDate: ""
   });
+  const [submitting, setSubmitting] = useState(false);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  const filtered = MOCK_COUPONS.filter((c) => {
-    const matchSearch = c.code.toLowerCase().includes(search.toLowerCase()) || c.title.toLowerCase().includes(search.toLowerCase());
-    if (activeTab === 0) return matchSearch;
-    return matchSearch && c.status === ["active", "scheduled", "expired", "disabled"][activeTab - 1];
-  });
+  const fetchCoupons = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const statusParam = activeTab === 0 ? undefined : STATUS_MAP[activeTab - 1];
+      const res = await adminCouponService.getList({ search, status: statusParam, page, limit: LIMIT });
+      setCoupons(Array.isArray(res.data) ? res.data : []);
+      setTotal(res.pagination?.total ?? 0);
+    } catch (err: any) {
+      setError(err?.response?.status === 404 ? "API chưa được implement." : "Không thể tải dữ liệu.");
+    } finally {
+      setLoading(false);
+    }
+  }, [search, activeTab, page]);
+
+  useEffect(() => { fetchCoupons(); }, [fetchCoupons]);
+
+  const handleCreateCoupon = async () => {
+    if (!formData.code || !formData.title) return;
+    setSubmitting(true);
+    try {
+      await adminCouponService.create({
+        code: formData.code,
+        title: formData.title,
+        discountType: formData.discountType,
+        discountValue: formData.discountValue,
+        minOrder: formData.minOrder,
+        maxDiscount: formData.maxDiscount,
+        usageLimit: formData.usageLimit,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+      });
+      setShowForm(false);
+      setFormData({ code: "", title: "", discountType: "percentage", discountValue: 10, minOrder: 0, maxDiscount: 0, usageLimit: 100, startDate: "", endDate: "" });
+      fetchCoupons();
+    } catch (err) {
+      console.error("Create coupon failed:", err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleToggle = async (couponId: string) => {
+    try {
+      setActionLoading(couponId);
+      await adminCouponService.toggleStatus(couponId);
+      fetchCoupons();
+    } catch (err) {
+      console.error("Toggle failed:", err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDelete = async (couponId: string) => {
+    if (!confirm("Bạn có chắc muốn xóa mã giảm giá này?")) return;
+    try {
+      setActionLoading(couponId);
+      await adminCouponService.delete(couponId);
+      fetchCoupons();
+    } catch (err) {
+      console.error("Delete failed:", err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   const toggleSelect = (id: string) =>
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   const toggleAll = () => {
-    if (selected.length === filtered.length) setSelected([]);
-    else setSelected(filtered.map((c) => c.id));
+    if (selected.length === coupons.length) setSelected([]);
+    else setSelected(coupons.map((c) => c.coupon_id));
   };
 
   const columns = [
@@ -88,25 +134,25 @@ export default function AdminCouponsPage() {
       header: "Giảm giá",
       render: (c: Coupon) => (
         <span className="font-semibold text-[#E53935] text-xs">
-          {c.discountType === "percentage" ? `${c.discountValue}%` : formatCurrency(c.discountValue)}
-          {c.discountType === "percentage" && c.maxDiscount > 0 && <span className="text-[#757575] font-normal text-[10px] ml-1"> (tối đa {formatCurrency(c.maxDiscount)})</span>}
+          {c.discount_type === "percentage" ? `${c.discount_value}%` : formatCurrency(c.discount_value)}
+          {c.discount_type === "percentage" && c.max_discount > 0 && <span className="text-[#757575] font-normal text-[10px] ml-1"> (tối đa {formatCurrency(c.max_discount)})</span>}
         </span>
       ),
     },
-    { key: "minOrder", header: "Đơn tối thiểu", render: (c: Coupon) => <span className="text-[#757575] text-xs">{c.minOrder > 0 ? formatCurrency(c.minOrder) : "—"}</span> },
+    { key: "minOrder", header: "Đơn tối thiểu", render: (c: Coupon) => <span className="text-[#757575] text-xs">{c.min_order_amount > 0 ? formatCurrency(c.min_order_amount) : "—"}</span> },
     {
       key: "usage",
       header: "Sử dụng",
       render: (c: Coupon) => (
         <div>
           <div className="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden mb-1">
-            <div className="h-full bg-[#2563EB] rounded-full" style={{ width: `${Math.min(100, (c.usedCount / c.usageLimit) * 100)}%` }} />
+            <div className="h-full bg-[#2563EB] rounded-full" style={{ width: `${Math.min(100, (c.used_count / c.usage_limit) * 100)}%` }} />
           </div>
-          <span className="text-[11px] text-[#757575]">{c.usedCount}/{c.usageLimit}</span>
+          <span className="text-[11px] text-[#757575]">{c.used_count}/{c.usage_limit}</span>
         </div>
       ),
     },
-    { key: "date", header: "Thời gian", render: (c: Coupon) => <span className="text-[#757575] text-xs">{c.startDate} — {c.endDate}</span> },
+    { key: "date", header: "Thời gian", render: (c: Coupon) => <span className="text-[#757575] text-xs">{c.start_date} — {c.end_date}</span> },
     { key: "status", header: "Trạng thái", render: (c: Coupon) => <StatusBadge status={c.status} /> },
   ];
 
@@ -192,7 +238,13 @@ export default function AdminCouponsPage() {
         </div>
         <div className="flex gap-3 max-w-3xl">
           <button onClick={() => setShowForm(false)} className="flex-1 border border-[#E0E0E0] py-2.5 rounded-lg text-sm hover:bg-gray-50 bg-white">Hủy</button>
-          <button className="flex-1 bg-[#2563EB] text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700">Tạo mã giảm giá</button>
+          <button
+            onClick={handleCreateCoupon}
+            disabled={submitting || !formData.code || !formData.title}
+            className="flex-1 bg-[#2563EB] text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+          >
+            {submitting ? "Đang tạo..." : "Tạo mã giảm giá"}
+          </button>
         </div>
       </div>
     );
@@ -202,38 +254,56 @@ export default function AdminCouponsPage() {
     <div className="p-6 space-y-5">
       <UIPageHeader
         title="Quản lý mã giảm giá"
-        subtitle={`${MOCK_COUPONS.length} mã giảm giá`}
+        subtitle={`${total} mã giảm giá`}
         actions={
           <button onClick={() => setShowForm(true)} className="flex items-center gap-2 bg-[#2563EB] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
             <Plus size={14} /> Tạo mã giảm giá
           </button>
         }
       />
+      {error && (
+        <div className="mx-4 mt-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+          {error}
+        </div>
+      )}
       <div className="bg-white rounded-xl border border-[#E0E0E0]">
         <div className="px-4 py-3 border-b border-[#E0E0E0] flex items-center gap-3 flex-wrap">
           <div className="relative flex-1 min-w-48">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm mã giảm giá..." className="pl-8 pr-4 py-2 border border-[#E0E0E0] rounded-lg text-sm w-full focus:outline-none focus:border-[#1565C0]" />
+            <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Tìm mã giảm giá..." className="pl-8 pr-4 py-2 border border-[#E0E0E0] rounded-lg text-sm w-full focus:outline-none focus:border-[#1565C0]" />
           </div>
           <div className="flex gap-1">
             {TABS.map((tab, i) => (
-              <button key={tab} onClick={() => setActiveTab(i)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${activeTab === i ? "bg-[#1565C0] text-white" : "text-[#757575] hover:bg-gray-100"}`}>{tab}</button>
+              <button key={tab} onClick={() => { setActiveTab(i); setPage(1); }} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${activeTab === i ? "bg-[#1565C0] text-white" : "text-[#757575] hover:bg-gray-100"}`}>{tab}</button>
             ))}
           </div>
         </div>
         <TableDataTable
-          data={filtered}
+          data={coupons}
           columns={columns}
           selectedIds={selected}
           onToggleSelect={toggleSelect}
           onToggleAll={toggleAll}
-          idKey="id"
+          idKey="coupon_id"
           onRowHover={setHoveredRow}
           renderRowActions={(c: Coupon) => (
-            <div className={`flex items-center gap-1 transition-opacity ${hoveredRow === c.id ? "opacity-100" : "opacity-0"}`}>
-              <button className="p-1.5 rounded-lg hover:bg-gray-100 text-[#757575]"><Copy size={13} /></button>
+            <div className={`flex items-center gap-1 transition-opacity ${hoveredRow === c.coupon_id ? "opacity-100" : "opacity-0"}`}>
+              <button
+                onClick={() => handleToggle(c.coupon_id)}
+                disabled={actionLoading === c.coupon_id}
+                className="p-1.5 rounded-lg hover:bg-blue-50 text-[#1565C0] disabled:opacity-50"
+                title={c.status === "active" ? "Tắt" : "Bật"}
+              >
+                {actionLoading === c.coupon_id ? "..." : c.status === "active" ? "⏸" : "▶"}
+              </button>
               <button className="p-1.5 rounded-lg hover:bg-gray-100 text-[#757575]"><Edit2 size={13} /></button>
-              <button className="p-1.5 rounded-lg hover:bg-red-50 text-[#E53935]"><Trash2 size={13} /></button>
+              <button
+                onClick={() => handleDelete(c.coupon_id)}
+                disabled={actionLoading === c.coupon_id}
+                className="p-1.5 rounded-lg hover:bg-red-50 text-[#E53935] disabled:opacity-50"
+              >
+                <Trash2 size={13} />
+              </button>
             </div>
           )}
         />

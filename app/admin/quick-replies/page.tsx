@@ -1,34 +1,24 @@
 'use client'
 
-import { useState } from "react";
-import { Plus, Edit2, Trash2, Search, Reply, Copy } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Plus, Edit2, Trash2, Search, Reply, Copy, X } from "lucide-react";
 import { UIPageHeader } from "@/components/UI/PageHeader";
 import { TableDataTable } from "@/components/Table/DataTable";
-
-interface QuickReply {
-  id: string;
-  shortcut: string;
-  content: string;
-  category: string;
-  usageCount: number;
-  isActive: boolean;
-  createdAt: string;
-}
-
-const MOCK_QUICK_REPLIES: QuickReply[] = [
-  { id: "1", shortcut: "/chào", content: "Xin chào! Cảm ơn bạn đã liên hệ với VietShop. Mình có thể giúp gì cho bạn hôm nay?", category: "Chào hỏi", usageCount: 1245, isActive: true, createdAt: "01/01/2024" },
-  { id: "2", shortcut: "/cảm-ơn", content: "Cảm ơn bạn đã mua sắm tại VietShop! Nếu có bất kỳ thắc mắc nào, đừng ngần ngại liên hệ lại nhé.", category: "Cảm ơn", usageCount: 876, isActive: true, createdAt: "01/01/2024" },
-  { id: "3", shortcut: "/ship", content: "VietShop miễn phí giao hàng cho đơn từ 299K. Giao hàng nhanh 1-2 ngày cho nội thành HCM và HN.", category: "Vận chuyển", usageCount: 654, isActive: true, createdAt: "01/01/2024" },
-  { id: "4", shortcut: "/doi-tra", content: "VietShop hỗ trợ đổi trả trong 7 ngày với điều kiện sản phẩm còn nguyên seal, chưa qua sử dụng và còn đầy đủ phụ kiện đi kèm.", category: "Đổi trả", usageCount: 543, isActive: true, createdAt: "01/01/2024" },
-  { id: "5", shortcut: "/bh", content: "Tất cả sản phẩm tại VietShop được bảo hành chính hãng theo chính sách của nhà sản xuất. Thời gian bảo hành từ 12-24 tháng tùy sản phẩm.", category: "Bảo hành", usageCount: 432, isActive: true, createdAt: "01/01/2024" },
-  { id: "6", shortcut: "/tt", content: "VietShop chấp nhận thanh toán qua: COD (nhận hàng trả tiền), Chuyển khoản ngân hàng, MoMo, VNPay, PayPal. Bạn muốn thanh toán qua hình thức nào?", category: "Thanh toán", usageCount: 321, isActive: true, createdAt: "01/01/2024" },
-  { id: "7", shortcut: "/tg", content: "Thời gian phản hồi của VietShop: 8h-21h các ngày trong tuần (không nghỉ). Tin nhắn ngoài giờ sẽ được phản hồi vào sáng ngày làm việc tiếp theo.", category: "Giờ làm việc", usageCount: 210, isActive: true, createdAt: "01/01/2024" },
-  { id: "8", shortcut: "/tksp", content: "Mình xin lỗi vì sự bất tiện này. Mình sẽ chuyển yêu cầu của bạn đến bộ phận liên quan để xử lý sớm nhất có thể.", category: "Xin lỗi", usageCount: 198, isActive: false, createdAt: "05/01/2024" },
-];
+import { adminQuickReplyService, QuickReplyConfig } from "@/services/adminService";
 
 const CATEGORIES = ["Tất cả", "Chào hỏi", "Cảm ơn", "Vận chuyển", "Đổi trả", "Bảo hành", "Thanh toán", "Giờ làm việc", "Xin lỗi"];
+const TABS_CAT = ["Tất cả", "Đang dùng", "Tạm tắt"];
 
-const TABS = ["Tất cả", "Đang dùng", "Tạm tắt"];
+const CATEGORY_COLORS: Record<string, string> = {
+  "Chào hỏi": "bg-blue-100 text-blue-700",
+  "Cảm ơn": "bg-green-100 text-green-700",
+  "Vận chuyển": "bg-purple-100 text-purple-700",
+  "Đổi trả": "bg-amber-100 text-amber-700",
+  "Bảo hành": "bg-teal-100 text-teal-700",
+  "Thanh toán": "bg-rose-100 text-rose-700",
+  "Giờ làm việc": "bg-orange-100 text-orange-700",
+  "Xin lỗi": "bg-gray-100 text-gray-700",
+};
 
 export default function AdminQuickRepliesPage() {
   const [activeTab, setActiveTab] = useState(0);
@@ -36,48 +26,134 @@ export default function AdminQuickRepliesPage() {
   const [selected, setSelected] = useState<string[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ shortcut: "", content: "", category: "Chào hỏi" });
+  const [replies, setReplies] = useState<QuickReplyConfig[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [error, setError] = useState<string | null>(null);
+  const [formData, setFormData] = useState({ shortcut: "", title: "", message: "", category: "Chào hỏi", is_active: true });
+  const [editItem, setEditItem] = useState<QuickReplyConfig | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  const filtered = MOCK_QUICK_REPLIES.filter((r) => {
-    const matchSearch = r.shortcut.toLowerCase().includes(search.toLowerCase()) || r.content.toLowerCase().includes(search.toLowerCase());
-    if (activeTab === 0) return matchSearch;
-    if (activeTab === 1) return matchSearch && r.isActive;
-    return matchSearch && !r.isActive;
-  });
+  const fetchReplies = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      let isActiveParam: boolean | undefined;
+      if (activeTab === 1) isActiveParam = true;
+      if (activeTab === 2) isActiveParam = false;
+      const res = await adminQuickReplyService.getList({ search, is_active: isActiveParam, page, limit: 50 });
+      setReplies(res.data);
+      setTotal(res.pagination.total);
+    } catch (err: any) {
+      setError(err?.response?.status === 404 ? "API chưa được implement." : "Không thể tải dữ liệu.");
+    } finally {
+      setLoading(false);
+    }
+  }, [search, activeTab, page]);
+
+  useEffect(() => { fetchReplies(); }, [fetchReplies]);
+
+  const openAdd = () => {
+    setEditItem(null);
+    setFormData({ shortcut: "", title: "", message: "", category: "Chào hỏi", is_active: true });
+    setShowForm(true);
+  };
+
+  const openEdit = (item: QuickReplyConfig) => {
+    setEditItem(item);
+    setFormData({ shortcut: item.shortcut, title: item.title || item.shortcut, message: item.message, category: item.category, is_active: item.is_active });
+    setShowForm(true);
+  };
+
+  const handleSave = async () => {
+    if (!formData.shortcut || !formData.message) return;
+    setSubmitting(true);
+    try {
+      if (editItem) {
+        await adminQuickReplyService.update(editItem.reply_id, {
+          shortcut: formData.shortcut,
+          title: formData.title,
+          message: formData.message,
+          category: formData.category,
+          is_active: formData.is_active,
+        });
+      } else {
+        await adminQuickReplyService.create({
+          shortcut: formData.shortcut,
+          title: formData.title,
+          message: formData.message,
+          category: formData.category,
+          is_active: formData.is_active,
+        });
+      }
+      setShowForm(false);
+      fetchReplies();
+    } catch (err) {
+      console.error("Save failed:", err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (replyId: string) => {
+    if (!confirm("Xóa mẫu trả lời nhanh này?")) return;
+    try {
+      setActionLoading(replyId);
+      await adminQuickReplyService.delete(replyId);
+      fetchReplies();
+    } catch (err) {
+      console.error("Delete failed:", err);
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   const toggleSelect = (id: string) =>
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   const toggleAll = () => {
-    if (selected.length === filtered.length) setSelected([]);
-    else setSelected(filtered.map((r) => r.id));
+    if (selected.length === replies.length) setSelected([]);
+    else setSelected(replies.map((r) => r.reply_id));
   };
 
   const columns = [
     {
       key: "shortcut",
       header: "Shortcut",
-      render: (r: QuickReply) => (
+      render: (r: QuickReplyConfig) => (
         <div className="flex items-center gap-2">
           <span className="font-mono bg-gray-100 text-[#1565C0] text-xs px-2 py-1 rounded font-semibold">{r.shortcut}</span>
-          <button className="p-1 hover:bg-gray-100 rounded text-[#757575]"><Copy size={11} /></button>
+          <button className="p-1 hover:bg-gray-100 rounded text-[#757575]" onClick={() => navigator.clipboard.writeText(r.shortcut)}><Copy size={11} /></button>
         </div>
       ),
     },
     {
       key: "content",
       header: "Nội dung",
-      render: (r: QuickReply) => (
-        <p className="text-xs text-[#212121] line-clamp-2 max-w-sm">{r.content}</p>
+      render: (r: QuickReplyConfig) => (
+        <div className="max-w-sm">
+          <p className="text-xs font-medium text-[#212121] line-clamp-1">{r.title || "—"}</p>
+          <p className="text-[11px] text-[#757575] line-clamp-2 mt-0.5">{r.message}</p>
+        </div>
       ),
     },
-    { key: "category", header: "Danh mục", render: (r: QuickReply) => <span className="bg-gray-100 text-[#757575] text-xs px-2 py-0.5 rounded">{r.category}</span> },
-    { key: "usageCount", header: "Sử dụng", render: (r: QuickReply) => <span className="text-[#757575] text-xs font-medium">{r.usageCount}</span> },
+    {
+      key: "category",
+      header: "Danh mục",
+      render: (r: QuickReplyConfig) => (
+        <span className={`text-xs px-2 py-0.5 rounded font-medium ${CATEGORY_COLORS[r.category] || "bg-gray-100 text-gray-700"}`}>
+          {r.category}
+        </span>
+      ),
+    },
+    { key: "usageCount", header: "Sử dụng", render: (r: QuickReplyConfig) => <span className="text-[#757575] text-xs font-medium">{r.usage_count}</span> },
     {
       key: "status",
       header: "Trạng thái",
-      render: (r: QuickReply) => (
-        <span className={`px-2 py-0.5 rounded text-xs font-medium ${r.isActive ? "bg-green-100 text-[#2E7D32]" : "bg-gray-100 text-[#757575]"}`}>
-          {r.isActive ? "Đang dùng" : "Tạm tắt"}
+      render: (r: QuickReplyConfig) => (
+        <span className={`px-2 py-0.5 rounded text-xs font-medium ${r.is_active ? "bg-green-100 text-[#2E7D32]" : "bg-gray-100 text-[#757575]"}`}>
+          {r.is_active ? "Đang dùng" : "Tạm tắt"}
         </span>
       ),
     },
@@ -89,26 +165,68 @@ export default function AdminQuickRepliesPage() {
         <div className="flex items-center gap-3">
           <button onClick={() => setShowForm(false)} className="text-sm text-[#1565C0] hover:underline">← Quay lại</button>
           <span className="text-[#757575]">/</span>
-          <h1 className="text-lg font-bold text-[#212121]">Tạo trả lời nhanh</h1>
+          <h1 className="text-lg font-bold text-[#212121]">{editItem ? "Chỉnh sửa trả lời nhanh" : "Tạo trả lời nhanh"}</h1>
         </div>
         <div className="bg-white rounded-xl border border-[#E0E0E0] p-6 max-w-xl space-y-4">
           <div>
             <label className="text-xs font-medium text-[#757575] mb-1 block">Shortcut *</label>
-            <input value={formData.shortcut} onChange={(e) => setFormData({ ...formData, shortcut: e.target.value })} placeholder="VD: /chao" className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-[#1565C0]" />
+            <div className="flex items-center gap-2">
+              <input
+                value={formData.shortcut}
+                onChange={(e) => setFormData({ ...formData, shortcut: e.target.value.startsWith("/") ? e.target.value : "/" + e.target.value.replace(/^\//, "") })}
+                placeholder="VD: /chao"
+                className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-[#1565C0]"
+              />
+              <button className="p-2 border border-[#E0E0E0] rounded-lg hover:bg-gray-50 text-[#757575]" onClick={() => setFormData({ ...formData, shortcut: "/" + Math.random().toString(36).slice(2, 6) })} title="Tạo ngẫu nhiên">🎲</button>
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-[#757575] mb-1 block">Tiêu đề</label>
+            <input
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              placeholder="VD: Chào hỏi khách hàng"
+              className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0]"
+            />
           </div>
           <div>
             <label className="text-xs font-medium text-[#757575] mb-1 block">Danh mục</label>
-            <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0] bg-white">
+            <select
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0] bg-white"
+            >
               {CATEGORIES.filter((c) => c !== "Tất cả").map((c) => <option key={c}>{c}</option>)}
             </select>
           </div>
           <div>
             <label className="text-xs font-medium text-[#757575] mb-1 block">Nội dung trả lời *</label>
-            <textarea value={formData.content} onChange={(e) => setFormData({ ...formData, content: e.target.value })} rows={4} placeholder="Nhập nội dung trả lời nhanh..." className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0] resize-none" />
+            <textarea
+              value={formData.message}
+              onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+              rows={4}
+              placeholder="Nhập nội dung trả lời nhanh..."
+              className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0] resize-none"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setFormData({ ...formData, is_active: !formData.is_active })}
+              className={`w-11 h-6 rounded-full transition-colors relative ${formData.is_active ? "bg-[#2563EB]" : "bg-gray-300"}`}
+            >
+              <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${formData.is_active ? "translate-x-5" : "translate-x-0.5"}`} />
+            </button>
+            <span className="text-sm text-[#212121]">Kích hoạt</span>
           </div>
           <div className="flex gap-3 pt-4 border-t border-[#E0E0E0]">
             <button onClick={() => setShowForm(false)} className="flex-1 border border-[#E0E0E0] py-2.5 rounded-lg text-sm hover:bg-gray-50">Hủy</button>
-            <button className="flex-1 bg-[#2563EB] text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700">Tạo trả lời nhanh</button>
+            <button
+              onClick={handleSave}
+              disabled={submitting || !formData.shortcut || !formData.message}
+              className="flex-1 bg-[#2563EB] text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+            >
+              {submitting ? "Đang lưu..." : editItem ? "Lưu thay đổi" : "Tạo trả lời nhanh"}
+            </button>
           </div>
         </div>
       </div>
@@ -119,38 +237,59 @@ export default function AdminQuickRepliesPage() {
     <div className="p-6 space-y-5">
       <UIPageHeader
         title="Trả lời nhanh"
-        subtitle={`${MOCK_QUICK_REPLIES.length} mẫu trả lời`}
+        subtitle={`${total} mẫu trả lời`}
         actions={
-          <button onClick={() => setShowForm(true)} className="flex items-center gap-2 bg-[#2563EB] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
+          <button onClick={openAdd} className="flex items-center gap-2 bg-[#2563EB] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
             <Plus size={14} /> Tạo trả lời nhanh
           </button>
         }
       />
+      {error && (
+        <div className="mx-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+          {error}
+        </div>
+      )}
       <div className="bg-white rounded-xl border border-[#E0E0E0]">
         <div className="px-4 py-3 border-b border-[#E0E0E0] flex items-center gap-3 flex-wrap">
           <div className="relative flex-1 min-w-48">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm shortcut, nội dung..." className="pl-8 pr-4 py-2 border border-[#E0E0E0] rounded-lg text-sm w-full focus:outline-none focus:border-[#1565C0]" />
+            <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Tìm shortcut, nội dung..." className="pl-8 pr-4 py-2 border border-[#E0E0E0] rounded-lg text-sm w-full focus:outline-none focus:border-[#1565C0]" />
           </div>
           <div className="flex gap-1">
-            {TABS.map((tab, i) => (
-              <button key={tab} onClick={() => setActiveTab(i)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${activeTab === i ? "bg-[#1565C0] text-white" : "text-[#757575] hover:bg-gray-100"}`}>{tab}</button>
+            {CATEGORIES.filter((c) => c !== "Tất cả").map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSearch(cat)}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${search === cat ? "bg-[#2563EB] text-white" : "text-[#757575] hover:bg-gray-100"}`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-1">
+            {TABS_CAT.map((tab, i) => (
+              <button key={tab} onClick={() => { setActiveTab(i); setPage(1); }} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${activeTab === i ? "bg-[#1565C0] text-white" : "text-[#757575] hover:bg-gray-100"}`}>{tab}</button>
             ))}
           </div>
         </div>
         <TableDataTable
-          data={filtered}
+          data={replies}
           columns={columns}
           selectedIds={selected}
           onToggleSelect={toggleSelect}
           onToggleAll={toggleAll}
-          idKey="id"
+          idKey="reply_id"
           onRowHover={setHoveredRow}
-          renderRowActions={(r: QuickReply) => (
-            <div className={`flex items-center gap-1 transition-opacity ${hoveredRow === r.id ? "opacity-100" : "opacity-0"}`}>
-              <button className="p-1.5 rounded-lg hover:bg-gray-100 text-[#757575]"><Reply size={13} /></button>
-              <button className="p-1.5 rounded-lg hover:bg-gray-100 text-[#757575]"><Edit2 size={13} /></button>
-              <button className="p-1.5 rounded-lg hover:bg-red-50 text-[#E53935]"><Trash2 size={13} /></button>
+          renderRowActions={(r: QuickReplyConfig) => (
+            <div className={`flex items-center gap-1 transition-opacity ${hoveredRow === r.reply_id ? "opacity-100" : "opacity-0"}`}>
+              <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg hover:bg-gray-100 text-[#757575]"><Edit2 size={13} /></button>
+              <button
+                onClick={() => handleDelete(r.reply_id)}
+                disabled={actionLoading === r.reply_id}
+                className="p-1.5 rounded-lg hover:bg-red-50 text-[#E53935] disabled:opacity-50"
+              >
+                {actionLoading === r.reply_id ? "..." : <Trash2 size={13} />}
+              </button>
             </div>
           )}
         />
