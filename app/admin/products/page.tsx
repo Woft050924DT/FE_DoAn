@@ -54,7 +54,7 @@ export default function AdminProductsPage() {
 
   // Drawer state
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
-  const [drawerMode, setDrawerMode] = useState<"view" | "edit" | "add">("view");
+  const [drawerMode, setDrawerMode] = useState<"view" | "edit" | "add" | null>(null);
   const [drawerLoading, setDrawerLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -178,7 +178,7 @@ export default function AdminProductsPage() {
       } else {
         await productService.updateProduct(selectedProduct!.id, payload as any);
       }
-      setDrawerMode("view");
+      setDrawerMode(null);
       setSelectedProduct(null);
       fetchProducts();
     } catch (err) {
@@ -328,7 +328,6 @@ export default function AdminProductsPage() {
         onRowHover={setHoveredRow}
         renderRowActions={(p: any) => (
           <div className={`flex items-center gap-1 transition-opacity ${hoveredRow === p.id ? "opacity-100" : "opacity-0"}`}>
-            <button onClick={() => openView(p)} className="p-1.5 rounded-lg hover:bg-gray-100 text-[#757575]" title="Xem"><Eye size={13} /></button>
             <button onClick={() => openEdit(p)} className="p-1.5 rounded-lg hover:bg-gray-100 text-[#757575]" title="Sửa"><Edit2 size={13} /></button>
             <button onClick={() => handleDelete(p.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-[#E53935]" title="Xóa"><Trash2 size={13} /></button>
           </div>
@@ -344,9 +343,9 @@ export default function AdminProductsPage() {
       </div>
 
       {/* Product Detail/Edit Drawer */}
-      {(drawerMode === "view" || drawerMode === "edit" || drawerMode === "add") && (
+      {drawerMode && (
         <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-black/30" onClick={() => { setDrawerMode("view"); setSelectedProduct(null); }} />
+          <div className="absolute inset-0 bg-black/30" onClick={() => { setDrawerMode(null); setSelectedProduct(null); }} />
           <div className="relative bg-white h-full overflow-y-auto shadow-2xl flex flex-col overflow-x-hidden"
             style={{ width: "min(672px, 100vw)" }}>
             {/* Drawer Header */}
@@ -369,74 +368,14 @@ export default function AdminProductsPage() {
                     {saving ? "Đang lưu..." : "Lưu"}
                   </button>
                 )}
-                <button onClick={() => { setDrawerMode("view"); setSelectedProduct(null); }} className="p-2 hover:bg-gray-100 rounded-lg"><X size={18} /></button>
+                <button onClick={() => { setDrawerMode(null); setSelectedProduct(null); }} className="p-2 hover:bg-gray-100 rounded-lg"><X size={18} /></button>
               </div>
             </div>
 
             <div className="flex-1 p-6 space-y-5 min-w-0 overflow-x-hidden">
               {drawerMode === "view" ? (
                 /* VIEW MODE */
-                <>
-                  {/* Variants */}
-                  <div className="bg-white rounded-xl border border-[#E0E0E0] p-5">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-semibold text-[#212121]">Biến thể ({variants.length})</h4>
-                      <button onClick={() => setVariantsExpanded(!variantsExpanded)} className="p-1 hover:bg-gray-100 rounded">
-                        {variantsExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                      </button>
-                    </div>
-                    {variantsExpanded && (
-                      <>
-                        {variants.length === 0 ? (
-                          <p className="text-sm text-[#757575]">Chưa có biến thể nào</p>
-                        ) : (
-                          <div className="space-y-2">
-                            {variants.map((v: any) => (
-                              <div key={v.variant_id} className="flex items-center gap-3 p-3 bg-[#F5F6FA] rounded-lg">
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-[#212121] truncate">{v.name}</p>
-                                  <p className="text-xs text-[#757575]">SKU: {v.sku}</p>
-                                </div>
-                                <div className="text-right shrink-0">
-                                  <p className="text-sm font-semibold text-[#E53935]">{formatCurrency(v.price)}</p>
-                                  <p className={`text-xs ${v.stock_quantity > 0 ? "text-[#2E7D32]" : "text-[#E53935]"}`}>
-                                    {v.stock_quantity > 0 ? `${v.stock_quantity} sp` : "Hết hàng"}
-                                  </p>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-
-                  {/* Basic Info */}
-                  <div className="bg-white rounded-xl border border-[#E0E0E0] p-5">
-                    <h4 className="font-semibold text-[#212121] mb-3">Thông tin cơ bản</h4>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      {[
-                        { label: "Giá bán", value: formatCurrency(selectedProduct?.price || 0) },
-                        { label: "Giá gốc", value: selectedProduct?.comparePrice ? formatCurrency(selectedProduct.comparePrice) : "—" },
-                        { label: "Tồn kho", value: `${selectedProduct?.stock || 0} sản phẩm` },
-                        { label: "Trạng thái", value: STATUS_COLORS[selectedProduct?.status]?.label || selectedProduct?.status },
-                        { label: "Nổi bật", value: selectedProduct?.featured ? "★ Có" : "— " },
-                        { label: "Bán chạy", value: selectedProduct?.bestSeller ? "✓ Có" : "—" },
-                      ].map(row => (
-                        <div key={row.label} className="flex flex-col gap-1">
-                          <span className="text-xs text-[#757575]">{row.label}</span>
-                          <span className="font-medium text-[#212121] truncate">{row.value}</span>
-                        </div>
-                      ))}
-                    </div>
-                    {selectedProduct?.short_description && (
-                      <div className="mt-4 pt-4 border-t border-[#E0E0E0]">
-                        <p className="text-xs text-[#757575] mb-1">Mô tả ngắn</p>
-                        <p className="text-sm text-[#212121]">{selectedProduct.short_description}</p>
-                      </div>
-                    )}
-                  </div>
-                </>
+                <div />
               ) : (
                 /* EDIT / ADD MODE */
                 <>

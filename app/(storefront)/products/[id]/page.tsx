@@ -146,9 +146,22 @@ export default function ProductDetailPage() {
     }
   };
 
-  const handleBuyNow = async () => {
-    const added = await handleAddToCart();
-    if (added) router.push("/checkout");
+  const handleBuyNow = () => {
+    if (!product) return;
+    // Lưu item "mua ngay" vào sessionStorage, không cần thêm vào cart
+    const buyNowItem = {
+      id: `buynow-${product.id}`,
+      name: product.name,
+      image: product.image,
+      price: product.price,
+      comparePrice: product.comparePrice,
+      quantity,
+      color: COLORS[selectedColor]?.name || "",
+      size: SIZES[selectedSize] || "",
+      productId: product.id,
+    };
+    sessionStorage.setItem("buynow_item", JSON.stringify(buyNowItem));
+    router.push("/checkout?mode=buynow");
   };
 
   const ratingBreakdown = [
@@ -181,6 +194,7 @@ export default function ProductDetailPage() {
               alt={product.name}
               className="w-full h-full object-cover cursor-zoom-in"
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            />
             {product.badge && (
               <div className="absolute top-3 left-3 bg-[#E53935] text-white text-xs font-bold px-2.5 py-1 rounded-full">
                 -{product.discount}%
@@ -307,8 +321,7 @@ export default function ProductDetailPage() {
             </button>
             <button
               onClick={handleBuyNow}
-              disabled={addingToCart}
-              className="flex-1 flex items-center justify-center gap-2 bg-[#E53935] text-white py-3 rounded-xl font-semibold hover:bg-[#C62828] transition-colors disabled:opacity-60"
+              className="flex-1 flex items-center justify-center gap-2 bg-[#E53935] text-white py-3 rounded-xl font-semibold hover:bg-[#C62828] transition-colors"
             >
               <Zap size={18} />
               Mua ngay

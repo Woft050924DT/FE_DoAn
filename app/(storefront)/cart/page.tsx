@@ -20,12 +20,14 @@ interface CartItem {
 const normalizeCartProduct = (item: any) => {
   const product = item.products || item.product || item;
   const primaryImage = product.product_images?.find((image: any) => image.is_primary)?.image_url;
+  const variant = item.product_variants || item.product_variant || item.variant || null;
+
   return {
     ...product,
     image: product.image || primaryImage || product.product_images?.[0]?.image_url || "",
     name: product.name || item.name || "",
-    price: item.price || product.price || 0,
-    compare_price: product.compare_price,
+    price: item.price || variant?.price || product.price || 0,
+    compare_price: variant?.compare_price || product.compare_price,
     product_id: product.product_id || item.product_id,
   };
 };
@@ -43,14 +45,17 @@ export default function CartPage() {
       try {
         setLoading(true);
         const cart = await cartService.getCart();
-        const items = (cart.cart_items || []).map((item: any) => ({
-          id: item.cart_item_id,
-          product: normalizeCartProduct(item),
-          quantity: item.quantity,
-          color: item.product_variants?.option1_value || item.product_variants?.name || "",
-          size: item.product_variants?.option2_value || "",
-          selected: true,
-        }));
+        const items = (cart.cart_items || []).map((item: any) => {
+          const variant = item.product_variants || item.product_variant || item.variant || null;
+          return {
+            id: item.cart_item_id,
+            product: normalizeCartProduct(item),
+            quantity: item.quantity,
+            color: variant?.name || variant?.option1_value || variant?.color || "",
+            size: variant?.option2_value || variant?.size || "",
+            selected: true,
+          };
+        });
         setCartItems(items);
       } catch (err) {
         console.error(err);
@@ -172,7 +177,9 @@ export default function CartPage() {
                   >
                     {item.product.name}
                   </p>
-                  <p className="text-xs text-[#757575] mt-0.5">Màu: {item.color} · Size: {item.size}</p>
+            <p className="text-xs text-[#757575] mt-0.5">
+                    {item.color ? `Màu: ${item.color}` : "Màu: —"} · {item.size ? `Size: ${item.size}` : "Size: —"}
+                  </p>
                   <div className="flex items-center justify-between mt-3 flex-wrap gap-2">
                     <div>
                       <span className="text-base font-semibold text-[#E53935]">{formatCurrency(item.product.price)}</span>
@@ -183,7 +190,13 @@ export default function CartPage() {
                     <div className="flex items-center gap-3">
                       <div className="flex items-center border border-[#E0E0E0] rounded-lg overflow-hidden">
                         <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 font-bold text-[#212121]">−</button>
-                        <span className="w-8 text-center text-sm">{item.quantity}</span>
+                        <input
+                          type="number"
+                          value={item.quantity}
+                          onChange={(e) => updateQuantity(item.id, Math.max(1, Number(e.target.value)))}
+                          className="w-10 h-8 text-center text-sm font-medium text-[#212121] bg-white border-x border-[#E0E0E0] focus:outline-none"
+                          min={1}
+                        />
                         <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 font-bold text-[#212121]">+</button>
                       </div>
                       <span className="text-sm font-semibold text-[#212121]">= {formatCurrency((item.product.price || 0) * item.quantity)}</span>
@@ -263,7 +276,15 @@ export default function CartPage() {
               disabled={selectedItems.length === 0}
               className="w-full mt-4 bg-[#E53935] text-white py-3 rounded-xl font-semibold hover:bg-[#C62828] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Tiến hành thanh toán
+              Tiến hành thanh toán ({selectedItems.length} sp)
+            </button>
+
+            <button
+              onClick={() => router.push("/checkout")}
+              disabled={cartItems.length === 0}
+              className="w-full mt-2 flex items-center justify-center gap-2 bg-[#1565C0] text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-[#0D47A1] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              🛒 Mua tất cả ({cartItems.length} sản phẩm)
             </button>
 
             <button

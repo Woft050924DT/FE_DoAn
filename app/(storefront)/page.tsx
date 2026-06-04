@@ -33,14 +33,28 @@ const HERO_SLIDES = [
   },
 ];
 
-const CATEGORIES = [
-  { id: "1", name: "Điện thoại", icon: "📱", count: 245 },
-  { id: "2", name: "Laptop", icon: "💻", count: 128 },
-  { id: "3", name: "Thời trang", icon: "👗", count: 892 },
-  { id: "4", name: "Nhà cửa", icon: "🏠", count: 456 },
-  { id: "5", name: "Âm thanh", icon: "🎧", count: 167 },
-  { id: "6", name: "Đồng hồ", icon: "⌚", count: 89 },
-];
+const CATEGORY_ICONS: Record<string, string> = {
+  "điện thoại": "📱", "phone": "📱", "mobile": "📱",
+  "laptop": "💻", "máy tính": "💻", "computer": "💻",
+  "thời trang": "👗", "fashion": "👗", "quần áo": "👔",
+  "nhà cửa": "🏠", "nội thất": "🛋️", "home": "🏠",
+  "âm thanh": "🎧", "audio": "🎧", "tai nghe": "🎧",
+  "đồng hồ": "⌚", "watch": "⌚",
+  "máy ảnh": "📷", "camera": "📷",
+  "tablet": "📱", "máy tính bảng": "📱",
+  "tivi": "📺", "tv": "📺",
+  "phụ kiện": "🔌", "accessories": "🔌",
+  "gaming": "🎮", "game": "🎮",
+  "sách": "📚", "book": "📚",
+};
+
+const getCategoryIcon = (name: string) => {
+  const lower = name.toLowerCase();
+  for (const [key, icon] of Object.entries(CATEGORY_ICONS)) {
+    if (lower.includes(key)) return icon;
+  }
+  return "🛍️";
+};
 
 const transformProduct = (apiProduct: any) => ({
   id: apiProduct.product_id,
@@ -104,6 +118,7 @@ export default function HomePage() {
   const router = useRouter();
   const [slide, setSlide] = useState(0);
   const [products, setProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<{ id: string; name: string; icon: string; count: number; slug: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const countdown = useCountdown();
 
@@ -113,18 +128,40 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const data = await productService.getProducts({ limit: 20 });
-        setProducts(data.products.map(transformProduct));
+        // Fetch categories + products song song
+        const [catList, data] = await Promise.all([
+          productService.getCategories(),
+          productService.getProducts({ limit: 100 }),
+        ]);
+        const transformedProducts = data.products.map(transformProduct);
+        setProducts(transformedProducts);
+
+        // Đếm số sản phẩm thực theo category_id
+        const countMap: Record<string, number> = {};
+        data.products.forEach((p: any) => {
+          const catId = p.categories?.category_id;
+          if (catId) countMap[catId] = (countMap[catId] || 0) + 1;
+        });
+
+        // Build category list với count thực + icon
+        const built = catList.slice(0, 6).map((cat) => ({
+          id: cat.category_id,
+          name: cat.name,
+          slug: cat.slug,
+          icon: getCategoryIcon(cat.name),
+          count: countMap[cat.category_id] || 0,
+        }));
+        setCategories(built);
       } catch (err) {
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
-    fetchProducts();
+    fetchData();
   }, []);
 
   const flashSaleProducts = products.filter((p) => p.badge === "SALE").slice(0, 6);
@@ -186,19 +223,24 @@ export default function HomePage() {
       <div className="max-w-7xl mx-auto px-4 mt-8">
         {/* Featured Categories */}
         <div className="mb-10">
-          <SectionHeader title="📦 Danh mục nổi bật" />
+          <SectionHeader title="📦 Danh mục nổi bật" link="/products" />
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => router.push(`/products?cat=${cat.name}`)}
-                className="bg-white rounded-xl p-4 flex flex-col items-center gap-2 border border-[#E0E0E0] hover:border-[#E53935] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group"
-              >
-                <span className="text-2xl">{cat.icon}</span>
-                <span className="text-xs font-medium text-[#212121] text-center leading-tight group-hover:text-[#E53935] transition-colors">{cat.name}</span>
-                <span className="text-[10px] text-[#757575]">{cat.count} sp</span>
-              </button>
-            ))}
+            {loading
+              ? Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="bg-white rounded-xl p-4 h-24 border border-[#E0E0E0] animate-pulse" />
+                ))
+              : categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => router.push(`/products?cat=${cat.id}`)}
+                    className="bg-white rounded-xl p-4 flex flex-col items-center gap-2 border border-[#E0E0E0] hover:border-[#E53935] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group"
+                  >
+                    <span className="text-2xl">{cat.icon}</span>
+                    <span className="text-xs font-medium text-[#212121] text-center leading-tight group-hover:text-[#E53935] transition-colors">{cat.name}</span>
+                    <span className="text-[10px] text-[#757575]">{cat.count} sp</span>
+                  </button>
+                ))
+            }
           </div>
         </div>
 

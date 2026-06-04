@@ -18,13 +18,14 @@ interface CartItem {
 const normalizeCartProduct = (item: any) => {
   const product = item.products || item.product || item;
   const primaryImage = product.product_images?.find((image: any) => image.is_primary)?.image_url;
+  const variant = item.product_variants || item.product_variant || item.variant || null;
 
   return {
     ...product,
     image: product.image || primaryImage || product.product_images?.[0]?.image_url || null,
     name: product.name || item.name || "",
-    price: item.price || product.price || 0,
-    compare_price: product.compare_price,
+    price: item.price || variant?.price || product.price || 0,
+    compare_price: variant?.compare_price || product.compare_price,
     product_id: product.product_id || item.product_id,
   };
 };
@@ -42,14 +43,17 @@ export function ScreensCart() {
       try {
         setLoading(true);
         const cart = await cartService.getCart();
-        const items = (cart.cart_items || []).map((item: any) => ({
-          id: item.cart_item_id,
-          product: normalizeCartProduct(item),
-          quantity: item.quantity,
-          color: item.product_variants?.option1_value || item.product_variants?.name || "",
-          size: item.product_variants?.option2_value || "",
-          selected: true,
-        }));
+        const items = (cart.cart_items || []).map((item: any) => {
+          const variant = item.product_variants || item.product_variant || item.variant || null;
+          return {
+            id: item.cart_item_id,
+            product: normalizeCartProduct(item),
+            quantity: item.quantity,
+            color: variant?.name || variant?.option1_value || variant?.color || "",
+            size: variant?.option2_value || variant?.size || "",
+            selected: true,
+          };
+        });
         setCartItems(items);
       } catch (err) {
         console.error(err);
@@ -167,7 +171,7 @@ export function ScreensCart() {
                     {item.product.name}
                   </p>
                   <p className="text-xs text-[#757575] mt-0.5">
-                    Màu: {item.color} · Size: {item.size}
+                    {item.color ? `Màu: ${item.color}` : "Màu: —"} · {item.size ? `Size: ${item.size}` : "Size: —"}
                   </p>
                   <div className="flex items-center justify-between mt-3 flex-wrap gap-2">
                     <div>
