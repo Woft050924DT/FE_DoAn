@@ -249,7 +249,6 @@ export default function AdminChatPage() {
                   className="text-xs border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-2 py-1.5 bg-white dark:bg-white text-[#212121] dark:text-[#212121] focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]"
                 >
                   {PRIORITIES.map(p => (
-                  {PRIORITIES.map(p => (
                     <option key={p.value} value={p.value}>{p.label}</option>
                   ))}
                 </select>
