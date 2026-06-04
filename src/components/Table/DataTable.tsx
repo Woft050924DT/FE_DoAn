@@ -41,7 +41,7 @@ export function TableDataTable<T>({
                 type="checkbox"
                 checked={selectedIds.length === data.length && data.length > 0}
                 onChange={onToggleAll}
-                className="w-4 h-4 accent-[#1565C0]"
+                className="w-4 h-4 accent-[#1565C0] dark:accent-[#60A5FA]"
               />
             </th>
             {columns.map((col) => (
@@ -69,7 +69,7 @@ export function TableDataTable<T>({
                     type="checkbox"
                     checked={selectedIds.includes(id)}
                     onChange={() => onToggleSelect(id)}
-                    className="w-4 h-4 accent-[#1565C0]"
+                    className="w-4 h-4 accent-[#1565C0] dark:accent-[#60A5FA]"
                   />
                 </td>
                 {columns.map((col) => (

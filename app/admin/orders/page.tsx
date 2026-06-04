@@ -308,7 +308,7 @@ export default function AdminOrdersPage() {
                       <select
                         value={orderUpdate.status || selectedOrder.status || selectedOrder.raw?.status || ""}
                         onChange={(e) => setOrderUpdate(prev => ({ ...prev, status: e.target.value }))}
-                        className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-[#1565C0]"
+                        className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]"
                       >
                         {STATUS_OPTIONS.map(s => <option key={s} value={s}>{STATUS_MAP_reverse?.[s] || s}</option>)}
                       </select>
@@ -318,7 +318,7 @@ export default function AdminOrdersPage() {
                       <select
                         value={orderUpdate.shipping_status || selectedOrder.shipping_status || selectedOrder.raw?.shipping_status || ""}
                         onChange={(e) => setOrderUpdate(prev => ({ ...prev, shipping_status: e.target.value }))}
-                        className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-[#1565C0]"
+                        className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]"
                       >
                         {SHIPPING_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
@@ -328,7 +328,7 @@ export default function AdminOrdersPage() {
                       <select
                         value={orderUpdate.payment_status || selectedOrder.payment_status || selectedOrder.raw?.payment_status || ""}
                         onChange={(e) => setOrderUpdate(prev => ({ ...prev, payment_status: e.target.value }))}
-                        className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-[#1565C0]"
+                        className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]"
                       >
                         {PAYMENT_STATUS_OPTIONS.map(s => <option key={s} value={s}>{PAYMENT_STATUS_MAP[s] || s}</option>)}
                       </select>
@@ -341,7 +341,7 @@ export default function AdminOrdersPage() {
                       value={orderUpdate.tracking_number ?? selectedOrder.raw?.tracking_number ?? ""}
                       onChange={(e) => setOrderUpdate(prev => ({ ...prev, tracking_number: e.target.value }))}
                       placeholder="Nhập mã vận đơn..."
-                      className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1565C0]"
+                      className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]"
                     />
                   </div>
                   <div>
@@ -351,7 +351,7 @@ export default function AdminOrdersPage() {
                       value={orderUpdate.internal_notes ?? selectedOrder.raw?.internal_notes ?? ""}
                       onChange={(e) => setOrderUpdate(prev => ({ ...prev, internal_notes: e.target.value }))}
                       placeholder="Ghi chú (chỉ admin nhìn thấy)..."
-                      className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1565C0] resize-none"
+                      className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA] resize-none"
                     />
                   </div>
                 </div>

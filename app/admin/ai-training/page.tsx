@@ -371,7 +371,7 @@ export default function AdminAITrainingPage() {
                 <select
                   value={formData.category}
                   onChange={e => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0] bg-white"
+                  className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]"
                 >
                   {CATEGORY_TABS.slice(1).map(cat => <option key={cat}>{cat}</option>)}
                 </select>
@@ -382,7 +382,7 @@ export default function AdminAITrainingPage() {
                   value={formData.intent}
                   onChange={e => setFormData({ ...formData, intent: e.target.value })}
                   placeholder="VD: return_policy"
-                  className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0]"
+                  className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]"
                 />
               </div>
               <div>
@@ -392,7 +392,7 @@ export default function AdminAITrainingPage() {
                   value={formData.question}
                   onChange={e => setFormData({ ...formData, question: e.target.value })}
                   placeholder="Nhập câu hỏi..."
-                  className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0] resize-none"
+                  className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA] resize-none"
                 />
               </div>
               <div>
@@ -402,7 +402,7 @@ export default function AdminAITrainingPage() {
                   value={formData.answer}
                   onChange={e => setFormData({ ...formData, answer: e.target.value })}
                   placeholder="Nhập câu trả lời..."
-                  className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0] resize-none"
+                  className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA] resize-none"
                 />
               </div>
               <div>
@@ -411,7 +411,7 @@ export default function AdminAITrainingPage() {
                   value={formData.keywords}
                   onChange={e => setFormData({ ...formData, keywords: e.target.value })}
                   placeholder="đổi trả, hoàn, trả lại"
-                  className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0]"
+                  className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]"
                 />
               </div>
               <div className="flex gap-3 pt-4 border-t border-[#E0E0E0]">

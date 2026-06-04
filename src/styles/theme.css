@@ -46,8 +46,8 @@
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.145 0 0);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: #030213;
   --primary: oklch(0.985 0 0);
   --primary-foreground: oklch(0.205 0 0);
   --secondary: oklch(0.269 0 0);
@@ -60,6 +60,7 @@
   --destructive-foreground: oklch(0.637 0.237 25.331);
   --border: oklch(0.269 0 0);
   --input: oklch(0.269 0 0);
+  --input-background: #ffffff;
   --ring: oklch(0.439 0 0);
   --font-weight-medium: 500;
   --font-weight-normal: 400;
@@ -177,30 +178,5 @@
     font-size: var(--text-base);
     font-weight: var(--font-weight-normal);
     line-height: 1.5;
-  }
-}
-
-/* Dark mode: input text = white, select trigger text = black */
-.dark {
-  /* Placeholder text in inputs/search becomes white */
-  input::placeholder,
-  [data-slot="input"]::placeholder {
-    color: rgba(255, 255, 255, 0.5);
-  }
-
-  /* Select trigger — selected value text stays black so it's visible on dark bg */
-  [data-slot="select-trigger"] {
-    color: #030213;
-  }
-
-  /* Select dropdown items — text is black on the light popover */
-  [data-slot="select-content"],
-  [data-slot="select-item"] {
-    color: #030213;
-  }
-
-  /* Select placeholder text in dark mode */
-  [data-slot="select-trigger"][data-placeholder] {
-    color: #717182;
   }
 }

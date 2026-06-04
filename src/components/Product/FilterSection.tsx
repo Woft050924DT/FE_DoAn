@@ -28,7 +28,7 @@ export function ProductFilterSection({
             placeholder={searchPlaceholder}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-8 pr-4 py-2 border border-[#E0E0E0] rounded-lg text-sm focus:outline-none focus:border-[#1565C0]"
+            className="w-full pl-8 pr-4 py-2 border border-[#E0E0E0] dark:border-[#374151] rounded-lg text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]"
           />
         </div>
         {extraContent}

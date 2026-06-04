@@ -53,7 +53,7 @@ export default function AdminBannersPage() {
         <div className="px-4 py-3 border-b border-[#E0E0E0]">
           <div className="relative max-w-xs">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Tìm banner..." className="pl-8 pr-4 py-2 border border-[#E0E0E0] rounded-lg text-sm w-full focus:outline-none focus:border-[#1565C0]" />
+            <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Tìm banner..." className="pl-8 pr-4 py-2 border border-[#E0E0E0] dark:border-[#374151] rounded-lg text-sm w-full bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]" />
           </div>
         </div>
         <div className="p-4">
@@ -91,7 +91,7 @@ export default function AdminBannersPage() {
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => setSelected((prev) => prev.includes(banner.banner_id) ? prev.filter((x) => x !== banner.banner_id) : [...prev, banner.banner_id])}
-                        className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selected.includes(banner.banner_id) ? "bg-[#1565C0] border-[#1565C0]" : "border-[#E0E0E0]"}`}
+                        className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selected.includes(banner.banner_id) ? "bg-[#1565C0] border-[#1565C0]" : "border-[#E0E0E0] dark:border-gray-400 bg-white dark:bg-white"}`}
                       >
                         {selected.includes(banner.banner_id) && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
                       </button>

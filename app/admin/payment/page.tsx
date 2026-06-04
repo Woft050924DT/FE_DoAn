@@ -213,7 +213,7 @@ export default function AdminPaymentPage() {
               ].map((field) => (
                 <div key={field.key}>
                   <label className="text-xs font-medium text-[#757575] mb-1 block">{field.label}</label>
-                  <input type="password" placeholder={field.placeholder} className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0]" />
+                  <input type="password" placeholder={field.placeholder} className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]" />
                 </div>
               ))}
             </div>
@@ -228,7 +228,7 @@ export default function AdminPaymentPage() {
                 <select
                   value={config.payment_timeout}
                   onChange={(e) => setConfig({ ...config, payment_timeout: e.target.value })}
-                  className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0] bg-white"
+                  className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]"
                 >
                   <option value="15">15 phút</option>
                   <option value="30">30 phút</option>
@@ -242,7 +242,7 @@ export default function AdminPaymentPage() {
                 <select
                   value={config.auto_confirm}
                   onChange={(e) => setConfig({ ...config, auto_confirm: e.target.value })}
-                  className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0] bg-white"
+                  className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]"
                 >
                   <option value="on_payment_success">Khi thanh toán thành công</option>
                   <option value="manual">Thủ công</option>
@@ -254,7 +254,7 @@ export default function AdminPaymentPage() {
                 <select
                   value={config.log_level}
                   onChange={(e) => setConfig({ ...config, log_level: e.target.value })}
-                  className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0] bg-white"
+                  className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]"
                 >
                   <option value="all">Tất cả giao dịch</option>
                   <option value="failed_only">Chỉ giao dịch thất bại</option>
@@ -272,7 +272,7 @@ export default function AdminPaymentPage() {
           <div className="bg-white rounded-xl border border-[#E0E0E0] p-4 flex flex-wrap items-center gap-3">
             <div className="relative flex-1 min-w-48">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input value={txSearch} onChange={(e) => { setTxSearch(e.target.value); setTxPage(1); }} placeholder="Tìm mã giao dịch, khách hàng..." className="pl-8 pr-4 py-2 border border-[#E0E0E0] rounded-lg text-sm w-full focus:outline-none focus:border-[#1565C0]" />
+              <input value={txSearch} onChange={(e) => { setTxSearch(e.target.value); setTxPage(1); }} placeholder="Tìm mã giao dịch, khách hàng..." className="pl-8 pr-4 py-2 border border-[#E0E0E0] dark:border-[#374151] rounded-lg text-sm w-full bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]" />
             </div>
             <div className="flex gap-1">
               {["all", "pending", "completed", "failed", "refunded"].map((s) => (
@@ -363,7 +363,7 @@ export default function AdminPaymentPage() {
                 value={refundAmount}
                 onChange={(e) => setRefundAmount(Number(e.target.value))}
                 max={refundModal.amount - refundModal.refund_amount}
-                className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0]"
+                className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]"
               />
               <p className="text-[11px] text-[#9E9E9E] mt-1">Tối đa: {formatCurrency(refundModal.amount - refundModal.refund_amount)}</p>
             </div>

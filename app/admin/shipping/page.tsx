@@ -140,7 +140,7 @@ export default function AdminShippingPage() {
                       type="number"
                       value={method.base_price}
                       onChange={(e) => updateMethod(method.id, "base_price", Number(e.target.value))}
-                      className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1565C0]"
+                      className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]"
                     />
                   </div>
                   <div>
@@ -149,7 +149,7 @@ export default function AdminShippingPage() {
                       type="number"
                       value={method.free_threshold}
                       onChange={(e) => updateMethod(method.id, "free_threshold", Number(e.target.value))}
-                      className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1565C0]"
+                      className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]"
                     />
                   </div>
                   <div>
@@ -158,7 +158,7 @@ export default function AdminShippingPage() {
                       type="number"
                       value={method.max_weight}
                       onChange={(e) => updateMethod(method.id, "max_weight", Number(e.target.value))}
-                      className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1565C0]"
+                      className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]"
                     />
                   </div>
                   <div className="md:col-span-3">

@@ -291,19 +291,19 @@ export default function AdminProductsPage() {
               placeholder="Tìm sản phẩm, SKU..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              className="w-full pl-8 pr-4 py-2 border border-[#E0E0E0] rounded-lg text-sm focus:outline-none focus:border-[#1565C0]"
+              className="w-full pl-8 pr-4 py-2 border border-[#E0E0E0] dark:border-[#374151] rounded-lg text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]"
             />
           </div>
           <select
             onChange={(e) => { /* filter by brand */ }}
-            className="border border-[#E0E0E0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1565C0] bg-white"
+            className="border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]"
           >
             <option value="">Tất cả thương hiệu</option>
             {brands.map(b => <option key={b.brand_id} value={b.brand_id}>{b.name}</option>)}
           </select>
           <select
             onChange={(e) => { /* filter by category */ }}
-            className="border border-[#E0E0E0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#1565C0] bg-white"
+            className="border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]"
           >
             <option value="">Tất cả danh mục</option>
             {categories.map(c => <option key={c.category_id} value={c.category_id}>{c.name}</option>)}
@@ -384,16 +384,16 @@ export default function AdminProductsPage() {
                     <h4 className="font-semibold text-[#212121]">Thông tin cơ bản</h4>
                     <div>
                       <label className="text-xs font-medium text-[#757575] mb-1 block">Tên sản phẩm *</label>
-                      <input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Nhập tên sản phẩm..." className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0]" />
+                      <input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Nhập tên sản phẩm..." className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]" />
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="text-xs font-medium text-[#757575] mb-1 block">SKU *</label>
-                        <input value={formData.sku} onChange={(e) => setFormData({ ...formData, sku: e.target.value })} placeholder="VD: IP15PM-256" className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0]" />
+                        <input value={formData.sku} onChange={(e) => setFormData({ ...formData, sku: e.target.value })} placeholder="VD: IP15PM-256" className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]" />
                       </div>
                       <div>
                         <label className="text-xs font-medium text-[#757575] mb-1 block">Danh mục</label>
-                        <select value={formData.category_id} onChange={(e) => setFormData({ ...formData, category_id: e.target.value })} className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0] bg-white">
+                        <select value={formData.category_id} onChange={(e) => setFormData({ ...formData, category_id: e.target.value })} className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]">
                           <option value="">Chọn danh mục...</option>
                           {categories.map(c => <option key={c.category_id} value={c.category_id}>{c.name}</option>)}
                         </select>
@@ -401,7 +401,7 @@ export default function AdminProductsPage() {
                     </div>
                     <div>
                       <label className="text-xs font-medium text-[#757575] mb-1 block">Mô tả ngắn</label>
-                      <textarea value={formData.short_description} onChange={(e) => setFormData({ ...formData, short_description: e.target.value })} rows={2} placeholder="Mô tả ngắn về sản phẩm..." className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0] resize-none" />
+                      <textarea value={formData.short_description} onChange={(e) => setFormData({ ...formData, short_description: e.target.value })} rows={2} placeholder="Mô tả ngắn về sản phẩm..." className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA] resize-none" />
                     </div>
                   </div>
 
@@ -411,15 +411,15 @@ export default function AdminProductsPage() {
                     <div className="grid grid-cols-3 gap-3">
                       <div>
                         <label className="text-xs font-medium text-[#757575] mb-1 block">Giá bán *</label>
-                        <input type="number" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} placeholder="0" className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0]" />
+                        <input type="number" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} placeholder="0" className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]" />
                       </div>
                       <div>
                         <label className="text-xs font-medium text-[#757575] mb-1 block">Giá gốc</label>
-                        <input type="number" value={formData.compare_price} onChange={(e) => setFormData({ ...formData, compare_price: e.target.value })} placeholder="0" className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0]" />
+                        <input type="number" value={formData.compare_price} onChange={(e) => setFormData({ ...formData, compare_price: e.target.value })} placeholder="0" className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]" />
                       </div>
                       <div>
                         <label className="text-xs font-medium text-[#757575] mb-1 block">Giá vốn</label>
-                        <input type="number" value={formData.cost_price} onChange={(e) => setFormData({ ...formData, cost_price: e.target.value })} placeholder="0" className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0]" />
+                        <input type="number" value={formData.cost_price} onChange={(e) => setFormData({ ...formData, cost_price: e.target.value })} placeholder="0" className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]" />
                       </div>
                     </div>
                   </div>
@@ -430,7 +430,7 @@ export default function AdminProductsPage() {
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="text-xs font-medium text-[#757575] mb-1 block">Trạng thái</label>
-                        <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0] bg-white">
+                        <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]">
                           <option value="draft">Nháp</option>
                           <option value="published">Đang bán</option>
                           <option value="out_of_stock">Hết hàng</option>
@@ -439,7 +439,7 @@ export default function AdminProductsPage() {
                       </div>
                       <div>
                         <label className="text-xs font-medium text-[#757575] mb-1 block">Thương hiệu</label>
-                        <select value={formData.brand_id} onChange={(e) => setFormData({ ...formData, brand_id: e.target.value })} className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0] bg-white">
+                        <select value={formData.brand_id} onChange={(e) => setFormData({ ...formData, brand_id: e.target.value })} className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]">
                           <option value="">Chọn thương hiệu...</option>
                           {brands.map(b => <option key={b.brand_id} value={b.brand_id}>{b.name}</option>)}
                         </select>
@@ -495,10 +495,10 @@ export default function AdminProductsPage() {
                           <div className="border border-dashed border-[#E0E0E0] rounded-lg p-3 space-y-2">
                             <p className="text-xs font-semibold text-[#757575]">Thêm biến thể</p>
                             <div className="grid grid-cols-4 gap-2">
-                              <input value={newVariant.option1_value} onChange={(e) => setNewVariant({ ...newVariant, option1_value: e.target.value, name: `${newVariant.option1_value}${newVariant.option2_value ? ` / ${newVariant.option2_value}` : ""}` })} placeholder="Màu (VD: Đỏ)" className="border border-[#E0E0E0] rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1565C0]" />
-                              <input value={newVariant.option2_value} onChange={(e) => setNewVariant({ ...newVariant, option2_value: e.target.value, name: `${newVariant.option1_value}${e.target.value ? ` / ${e.target.value}` : ""}` })} placeholder="Size (VD: M)" className="border border-[#E0E0E0] rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1565C0]" />
-                              <input type="number" value={newVariant.price} onChange={(e) => setNewVariant({ ...newVariant, price: e.target.value })} placeholder="Giá" className="border border-[#E0E0E0] rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1565C0]" />
-                              <input type="number" value={newVariant.stock_quantity} onChange={(e) => setNewVariant({ ...newVariant, stock_quantity: e.target.value })} placeholder="Tồn kho" className="border border-[#E0E0E0] rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:border-[#1565C0]" />
+                              <input value={newVariant.option1_value} onChange={(e) => setNewVariant({ ...newVariant, option1_value: e.target.value, name: `${newVariant.option1_value}${newVariant.option2_value ? ` / ${newVariant.option2_value}` : ""}` })} placeholder="Màu (VD: Đỏ)" className="border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]" />
+                              <input value={newVariant.option2_value} onChange={(e) => setNewVariant({ ...newVariant, option2_value: e.target.value, name: `${newVariant.option1_value}${e.target.value ? ` / ${e.target.value}` : ""}` })} placeholder="Size (VD: M)" className="border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]" />
+                              <input type="number" value={newVariant.price} onChange={(e) => setNewVariant({ ...newVariant, price: e.target.value })} placeholder="Giá" className="border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]" />
+                              <input type="number" value={newVariant.stock_quantity} onChange={(e) => setNewVariant({ ...newVariant, stock_quantity: e.target.value })} placeholder="Tồn kho" className="border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]" />
                             </div>
                             <button onClick={handleAddVariant} disabled={!newVariant.option1_value || !newVariant.price || saving} className="w-full bg-[#2563EB] text-white py-2 rounded-lg text-xs font-medium hover:bg-blue-700 disabled:opacity-50">
                               + Thêm biến thể

@@ -128,21 +128,21 @@ export default function AdminSettingsPage() {
               <div className="space-y-4">
                 <div>
                   <label className="text-xs font-medium text-[#757575] mb-1 block">Tên cửa hàng *</label>
-                  <input value={formData.storeName} onChange={(e) => setFormData({ ...formData, storeName: e.target.value })} className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0]" />
+                  <input value={formData.storeName} onChange={(e) => setFormData({ ...formData, storeName: e.target.value })} className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-medium text-[#757575] mb-1 block">Email liên hệ</label>
                     <div className="relative">
                       <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input value={formData.storeEmail} onChange={(e) => setFormData({ ...formData, storeEmail: e.target.value })} className="w-full border border-[#E0E0E0] rounded-lg pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0]" />
+                      <input value={formData.storeEmail} onChange={(e) => setFormData({ ...formData, storeEmail: e.target.value })} className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg pl-9 pr-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]" />
                     </div>
                   </div>
                   <div>
                     <label className="text-xs font-medium text-[#757575] mb-1 block">Số điện thoại</label>
                     <div className="relative">
                       <Phone size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input value={formData.storePhone} onChange={(e) => setFormData({ ...formData, storePhone: e.target.value })} className="w-full border border-[#E0E0E0] rounded-lg pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0]" />
+                      <input value={formData.storePhone} onChange={(e) => setFormData({ ...formData, storePhone: e.target.value })} className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg pl-9 pr-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]" />
                     </div>
                   </div>
                 </div>
@@ -150,16 +150,16 @@ export default function AdminSettingsPage() {
                   <label className="text-xs font-medium text-[#757575] mb-1 block">Địa chỉ cửa hàng</label>
                   <div className="relative">
                     <MapPin size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input value={formData.storeAddress} onChange={(e) => setFormData({ ...formData, storeAddress: e.target.value })} className="w-full border border-[#E0E0E0] rounded-lg pl-9 pr-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0]" />
+                      <input value={formData.storeAddress} onChange={(e) => setFormData({ ...formData, storeAddress: e.target.value })} className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg pl-9 pr-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]" />
                   </div>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-[#757575] mb-1 block">Mã số thuế</label>
-                  <input value={formData.storeTaxId} onChange={(e) => setFormData({ ...formData, storeTaxId: e.target.value })} className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0]" />
+                  <input value={formData.storeTaxId} onChange={(e) => setFormData({ ...formData, storeTaxId: e.target.value })} className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]" />
                 </div>
                 <div>
                   <label className="text-xs font-medium text-[#757575] mb-1 block">Mô tả cửa hàng</label>
-                  <textarea value={formData.storeDescription} onChange={(e) => setFormData({ ...formData, storeDescription: e.target.value })} rows={3} className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0] resize-none" />
+                  <textarea value={formData.storeDescription} onChange={(e) => setFormData({ ...formData, storeDescription: e.target.value })} rows={3} className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA] resize-none" />
                 </div>
               </div>
             </div>
@@ -170,7 +170,7 @@ export default function AdminSettingsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-medium text-[#757575] mb-1 block">Đơn vị tiền tệ</label>
-                  <select value={formData.currency} onChange={(e) => setFormData({ ...formData, currency: e.target.value })} className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0] bg-white">
+                  <select value={formData.currency} onChange={(e) => setFormData({ ...formData, currency: e.target.value })} className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]">
                     <option value="VND">VND - Đồng Việt Nam</option>
                     <option value="USD">USD - US Dollar</option>
                     <option value="EUR">EUR - Euro</option>
@@ -178,7 +178,7 @@ export default function AdminSettingsPage() {
                 </div>
                 <div>
                   <label className="text-xs font-medium text-[#757575] mb-1 block">Múi giờ</label>
-                  <select value={formData.timezone} onChange={(e) => setFormData({ ...formData, timezone: e.target.value })} className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0] bg-white">
+                  <select value={formData.timezone} onChange={(e) => setFormData({ ...formData, timezone: e.target.value })} className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]">
                     <option value="Asia/Ho_Chi_Minh">GMT+7 - Hồ Chí Minh</option>
                     <option value="Asia/Hanoi">GMT+7 - Hà Nội</option>
                   </select>

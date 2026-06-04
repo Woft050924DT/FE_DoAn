@@ -175,7 +175,7 @@ export default function AdminQuickRepliesPage() {
                 value={formData.shortcut}
                 onChange={(e) => setFormData({ ...formData, shortcut: e.target.value.startsWith("/") ? e.target.value : "/" + e.target.value.replace(/^\//, "") })}
                 placeholder="VD: /chao"
-                className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-[#1565C0]"
+                className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]"
               />
               <button className="p-2 border border-[#E0E0E0] rounded-lg hover:bg-gray-50 text-[#757575]" onClick={() => setFormData({ ...formData, shortcut: "/" + Math.random().toString(36).slice(2, 6) })} title="Tạo ngẫu nhiên">🎲</button>
             </div>
@@ -186,7 +186,7 @@ export default function AdminQuickRepliesPage() {
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="VD: Chào hỏi khách hàng"
-              className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0]"
+              className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]"
             />
           </div>
           <div>
@@ -194,7 +194,7 @@ export default function AdminQuickRepliesPage() {
             <select
               value={formData.category}
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0] bg-white"
+              className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]"
             >
               {CATEGORIES.filter((c) => c !== "Tất cả").map((c) => <option key={c}>{c}</option>)}
             </select>
@@ -206,7 +206,7 @@ export default function AdminQuickRepliesPage() {
               onChange={(e) => setFormData({ ...formData, message: e.target.value })}
               rows={4}
               placeholder="Nhập nội dung trả lời nhanh..."
-              className="w-full border border-[#E0E0E0] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#1565C0] resize-none"
+              className="w-full border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2.5 text-sm bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA] resize-none"
             />
           </div>
           <div className="flex items-center gap-2">
@@ -253,7 +253,7 @@ export default function AdminQuickRepliesPage() {
         <div className="px-4 py-3 border-b border-[#E0E0E0] flex items-center gap-3 flex-wrap">
           <div className="relative flex-1 min-w-48">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Tìm shortcut, nội dung..." className="pl-8 pr-4 py-2 border border-[#E0E0E0] rounded-lg text-sm w-full focus:outline-none focus:border-[#1565C0]" />
+            <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Tìm shortcut, nội dung..." className="pl-8 pr-4 py-2 border border-[#E0E0E0] dark:border-[#374151] rounded-lg text-sm w-full bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]" />
           </div>
           <div className="flex gap-1">
             {CATEGORIES.filter((c) => c !== "Tất cả").map((cat) => (

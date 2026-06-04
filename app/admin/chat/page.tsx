@@ -161,7 +161,7 @@ export default function AdminChatPage() {
         <div className="p-4 border-b border-[#E0E0E0]">
           <div className="relative mb-3">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input placeholder="Tìm hội thoại..." className="w-full pl-8 pr-4 py-2 border border-[#E0E0E0] rounded-lg text-sm focus:outline-none focus:border-[#1565C0] bg-[#F5F6FA]" />
+            <input placeholder="Tìm hội thoại..." className="w-full pl-8 pr-4 py-2 border border-[#E0E0E0] dark:border-[#374151] rounded-lg text-sm bg-[#F5F6FA] dark:bg-[#374151] text-[#212121] dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]" />
           </div>
           <div className="flex gap-1 overflow-x-auto">
             {FILTERS.map((f) => (
@@ -236,7 +236,7 @@ export default function AdminChatPage() {
                 <select
                   value={selectedStaff}
                   onChange={(e) => setSelectedStaff(e.target.value)}
-                  className="text-xs border border-[#E0E0E0] rounded-lg px-2 py-1.5 focus:outline-none bg-white"
+                  className="text-xs border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-2 py-1.5 bg-white dark:bg-white text-[#212121] dark:text-[#212121] focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]"
                 >
                   <option value="">Chưa gán</option>
                   {staffList.map(s => (
@@ -246,8 +246,9 @@ export default function AdminChatPage() {
                 <select
                   value={selectedPriority}
                   onChange={(e) => setSelectedPriority(e.target.value)}
-                  className="text-xs border border-[#E0E0E0] rounded-lg px-2 py-1.5 focus:outline-none bg-white"
+                  className="text-xs border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-2 py-1.5 bg-white dark:bg-white text-[#212121] dark:text-[#212121] focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]"
                 >
+                  {PRIORITIES.map(p => (
                   {PRIORITIES.map(p => (
                     <option key={p.value} value={p.value}>{p.label}</option>
                   ))}
@@ -420,7 +421,7 @@ export default function AdminChatPage() {
           <textarea
             rows={3}
             placeholder="Ghi chú (chỉ nhân viên thấy)..."
-            className="w-full text-xs border border-[#E0E0E0] rounded-lg px-3 py-2 focus:outline-none focus:border-[#1565C0] resize-none"
+            className="w-full text-xs border border-[#E0E0E0] dark:border-[#374151] rounded-lg px-3 py-2 bg-white dark:bg-white text-[#212121] dark:text-[#212121] placeholder:text-gray-400 dark:placeholder:text-gray-400 focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA] resize-none"
             defaultValue={convDetail?.internal_notes || ""}
           />
         </div>
