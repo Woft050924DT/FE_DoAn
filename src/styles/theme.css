@@ -179,3 +179,28 @@
     line-height: 1.5;
   }
 }
+
+/* Dark mode: input text = white, select trigger text = black */
+.dark {
+  /* Placeholder text in inputs/search becomes white */
+  input::placeholder,
+  [data-slot="input"]::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  /* Select trigger — selected value text stays black so it's visible on dark bg */
+  [data-slot="select-trigger"] {
+    color: #030213;
+  }
+
+  /* Select dropdown items — text is black on the light popover */
+  [data-slot="select-content"],
+  [data-slot="select-item"] {
+    color: #030213;
+  }
+
+  /* Select placeholder text in dark mode */
+  [data-slot="select-trigger"][data-placeholder] {
+    color: #717182;
+  }
+}

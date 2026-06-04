@@ -152,7 +152,7 @@ export default function AdminLayout({
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               placeholder="Tìm kiếm..."
-              className="pl-8 pr-4 py-1.5 border border-[#E0E0E0] rounded-lg text-sm w-56 focus:outline-none focus:border-[#1565C0]"
+              className="pl-8 pr-4 py-1.5 border border-[#E0E0E0] dark:border-[#374151] rounded-lg text-sm w-56 bg-white dark:bg-[#1F2937] text-[#212121] dark:text-white focus:outline-none focus:border-[#1565C0] dark:focus:border-[#60A5FA]"
             />
           </div>
           <NotificationBell />

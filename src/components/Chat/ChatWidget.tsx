@@ -144,7 +144,7 @@ export function ChatWidget() {
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
       {/* Chat Panel */}
       {state !== "collapsed" && (
-        <div className="w-[360px] bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden flex flex-col"
+        <div className="w-[360px] flex flex-col bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden"
           style={{ height: "500px" }}>
           {/* Header */}
           <div className="bg-[#E53935] px-4 py-3 flex items-center gap-3">

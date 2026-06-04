@@ -685,8 +685,13 @@ export const adminSharedService = {
    * Get quick reply templates
    */
   async getQuickReplies(): Promise<QuickReply[]> {
-    const response = await apiClient.get<QuickReply[]>('/api/admin/quick-replies');
-    return response.data;
+    const response = await apiClient.get<{ id: string; text: string; category: string }[]>('/api/admin/quick-replies');
+    return (response.data.data ?? response.data).map(r => ({
+      reply_id: 'id' in r ? String(r.id) : '',
+      title: '',
+      message: 'text' in r ? r.text : '',
+      category: r.category ?? '',
+    }));
   },
 };
 

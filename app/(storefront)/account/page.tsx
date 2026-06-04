@@ -6,7 +6,7 @@ import {
   LayoutDashboard, ShoppingBag, MapPin, Star, Bell, Ticket, Lock, LogOut, ChevronRight, Plus, Edit2, Trash2,
 } from "lucide-react";
 import { orderService, profileService } from "@/services";
-import { Address, Profile } from "@/services/types";
+import { Address, Profile, ProfileStats } from "@/services/types";
 import { OrderStatusBadge } from "@/components/Order/StatusBadge";
 
 const formatCurrency = (amount: number) =>
@@ -47,6 +47,11 @@ const FALLBACK_ADDRESSES = [
   { id: "a1", type: "home", name: "Nguyễn Văn An", phone: "0901234567", address: "123 Nguyễn Huệ, Phường Bến Nghé", city: "Q1, TP. Hồ Chí Minh", isDefault: true },
   { id: "a2", type: "office", name: "Nguyễn Văn An", phone: "0901234567", address: "456 Đinh Tiên Hoàng, Phường Đa Kao", city: "Q1, TP. Hồ Chí Minh", isDefault: false },
 ];
+const REVIEWS = [
+  { id: "r1", product: { name: "iPhone 15 Pro Max 256GB", image: "https://via.placeholder.com/60" }, rating: 5, date: "20/05/2024", content: "Sản phẩm tuyệt vời, giao hàng siêu nhanh. Đóng gói rất cẩn thận, hàng chuẩn chính hãng.", status: "approved" },
+  { id: "r2", product: { name: "MacBook Air M2 8GB/256GB", image: "https://via.placeholder.com/60" }, rating: 4, date: "15/04/2024", content: "Máy đẹp, chạy mượt. Điểm trừ nhỏ là hộp hơi móp một xíu do vận chuyển.", status: "approved" },
+  { id: "r3", product: { name: "AirPods Pro Gen 2", image: "https://via.placeholder.com/60" }, rating: 5, date: "10/06/2024", content: "Chưa nhận được hàng nhưng nghe nói âm thanh rất ok. Chờ trải nghiệm.", status: "pending" },
+];
 const ORDER_TABS = ["Tất cả", "Chờ xác nhận", "Đang xử lý", "Đang giao", "Đã giao", "Đã hủy"];
 
 export default function AccountPage() {
@@ -56,6 +61,7 @@ export default function AccountPage() {
   const [notifFilter, setNotifFilter] = useState("all");
   const [orders, setOrders] = useState<any[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [stats, setStats] = useState<ProfileStats | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
 
   const displayUser = {
@@ -87,6 +93,16 @@ export default function AccountPage() {
       } catch (err) { console.error(err); }
     };
     fetchProfile();
+  }, []);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const data = await profileService.getStats();
+        setStats(data);
+      } catch (err) { console.error(err); }
+    };
+    fetchStats();
   }, []);
 
   useEffect(() => {
@@ -164,10 +180,10 @@ export default function AccountPage() {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
-                  { label: "Tổng đơn", value: USER.totalOrders, icon: "📦", color: "text-[#1565C0]" },
-                  { label: "Chờ xử lý", value: USER.pendingOrders, icon: "⏳", color: "text-amber-600" },
-                  { label: "Đã chi tiêu", value: formatCurrency(USER.totalSpent).replace("₫", "đ"), icon: "💰", color: "text-[#E53935]", small: true },
-                  { label: "Đã đánh giá", value: USER.totalReviews, icon: "⭐", color: "text-[#2E7D32]" },
+                  { label: "Tổng đơn", value: stats?.total_orders ?? 0, icon: "📦", color: "text-[#1565C0]" },
+                  { label: "Chờ xử lý", value: stats?.pending_orders ?? 0, icon: "⏳", color: "text-amber-600" },
+                  { label: "Đã chi tiêu", value: formatCurrency(stats?.total_spent ?? 0).replace("₫", "đ"), icon: "💰", color: "text-[#E53935]", small: true },
+                  { label: "Đã đánh giá", value: stats?.total_reviews ?? 0, icon: "⭐", color: "text-[#2E7D32]" },
                 ].map((stat) => (
                   <div key={stat.label} className="bg-white rounded-xl border border-[#E0E0E0] p-4 text-center">
                     <div className="text-2xl mb-1">{stat.icon}</div>
@@ -308,7 +324,62 @@ export default function AccountPage() {
             </div>
           )}
 
-          {!["overview", "orders", "addresses", "notifications"].includes(activeSection) && (
+          {activeSection === "reviews" && (
+            <div className="bg-white rounded-2xl border border-[#E0E0E0] overflow-hidden">
+              <div className="p-5 border-b border-[#E0E0E0]">
+                <h3 className="font-bold text-[#212121]">Đánh giá của tôi</h3>
+                <p className="text-sm text-[#757575] mt-1">Quản lý các đánh giá sản phẩm bạn đã mua</p>
+              </div>
+              <div className="divide-y divide-[#F5F6FA]">
+                {REVIEWS.map((review) => (
+                  <div key={review.id} className="p-5 hover:bg-[#F5F6FA]/50 transition-colors">
+                    <div className="flex gap-4">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden border border-[#E0E0E0] shrink-0 bg-white">
+                        <img src={review.product.image} alt={review.product.name} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between gap-4 mb-2">
+                          <div>
+                            <h4 className="font-medium text-[#212121] text-sm line-clamp-1 hover:text-[#1565C0] cursor-pointer">
+                              {review.product.name}
+                            </h4>
+                            <div className="flex items-center gap-2 mt-1">
+                              <div className="flex text-amber-400">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <Star key={star} size={14} className={star <= review.rating ? "fill-amber-400" : "text-gray-300 fill-gray-300"} />
+                                ))}
+                              </div>
+                              <span className="text-xs text-[#757575]">{review.date}</span>
+                            </div>
+                          </div>
+                          <div>
+                            {review.status === 'approved' ? (
+                              <span className="bg-green-100 text-[#2E7D32] px-2 py-1 rounded text-xs font-medium whitespace-nowrap">Đã duyệt</span>
+                            ) : (
+                              <span className="bg-amber-100 text-amber-700 px-2 py-1 rounded text-xs font-medium whitespace-nowrap">Chờ duyệt</span>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-sm text-[#424242] bg-[#F5F6FA] p-3 rounded-xl mt-3">
+                          {review.content}
+                        </p>
+                        <div className="flex gap-3 mt-4">
+                          <button className="text-xs font-medium text-[#1565C0] hover:underline flex items-center gap-1">
+                            <Edit2 size={12} /> Sửa đánh giá
+                          </button>
+                          <button className="text-xs font-medium text-[#E53935] hover:underline flex items-center gap-1">
+                            <Trash2 size={12} /> Xóa
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!["overview", "orders", "addresses", "notifications", "reviews"].includes(activeSection) && (
             <div className="bg-white rounded-2xl border border-[#E0E0E0] p-16 text-center">
               <p className="text-4xl mb-3">🚧</p>
               <p className="font-semibold text-[#212121]">Đang phát triển</p>
